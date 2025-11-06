@@ -65,7 +65,7 @@ class TrajectoryNode(Node):
         self.jointnames = ['pan', 'tilt', 'roll']
 
         # Initialize the stored joint command position and task error.
-        self.qc = np.zeros(3)
+        self.q_c = np.zeros(3)
         self.e  = vzero()
 
         # Pick the convergence bandwidth.
@@ -120,7 +120,7 @@ class TrajectoryNode(Node):
         # Choose the alpha/beta angles based on the phase.
         if self.t <= 2.0:
             # Part A (t<=2):
-            (alpha, alphadot) = ...  FIXME
+            (alpha, alphadot) = goto(self.t, 2, 0, -np.pi / 2)
             (beta,  betadot)  = (0.0, 0.0)
         else:
             # To test only part A use.  FIXME remove this later.
@@ -128,32 +128,35 @@ class TrajectoryNode(Node):
             return
 
             # Part B (t>2):
-            (alpha, alphadot) = ... FIXME
-            (beta,  betadot)  = ... FIXME
+            # (alpha, alphadot) = ... FIXME
+            # (beta,  betadot)  = ... FIXME
 
         # Set up the desired rotation and angular velocity.
-        FIXME: What are Rd and wd?
+        R_d = Roty(alpha)
+        omega_d = np.array([0, alphadot, 0])
 
         # Grab the last joint command position and task error.
-        qclast = self.qc
-        elast  = self.e
+        last_q_c = self.q_c
+        last_e  = self.e
 
         # Compute the inverse kinematics
-        FIXME: Inverse Kinematics for rotation
+        # FIXME: Inverse Kinematics for rotation
+        qdot_c = np.zeros(3)
 
         # Integrate the joint position.
-        qc = qclast + self.dt * qcdot
+        q_c = last_q_c + self.dt * qdot_c
 
         # Compute the error (to be used next cycle).
-        FIXME: Compute the resultant task error.
+        # FIXME: Compute the resultant task error.
+        e = 0
 
         # Save the joint command position and task error.
-        self.qc = qc
-        self.e  = e
+        self.q_c = q_c
+        self.e = e
 
         # Ignore any translation (position and linear velocity).
-        pd = pzero()
-        vd = vzero()
+        p_d = pzero()
+        v_d = vzero()
 
 
         ##############################################################
@@ -165,18 +168,18 @@ class TrajectoryNode(Node):
         self.pubjoint.publish(JointState(
             header=header,
             name=self.jointnames,
-            position=qc.tolist(),
-            velocity=qcdot.tolist()))
+            position=q_c.tolist(),
+            velocity=qdot_c.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(Rd,pd)))
+            pose=Pose_from_Rp(R_d, p_d)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vd,wd)))
+            twist=Twist_from_vw(v_d, omega_d)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(Rd,pd)))
+            transform=Transform_from_Rp(R_d, p_d)))
 
 
 #
