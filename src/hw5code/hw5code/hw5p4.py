@@ -141,7 +141,8 @@ class TrajectoryNode(Node):
 
         # Compute the inverse kinematics
         # FIXME: Inverse Kinematics for rotation
-        qdot_c = np.zeros(3)
+        lamdba = 20
+        qdot_c = np.linalg.inv(Jac(last_q_c)) @ (omega_d + lamdba * eR(R_d, fkin(last_q_c)))
 
         # Integrate the joint position.
         q_c = last_q_c + self.dt * qdot_c
