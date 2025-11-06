@@ -49,6 +49,15 @@ def error(node, string):
     node.get_logger().error("KinematicChain: " + string)
     raise Exception(string)
 
+def Rot(v, alpha):
+    # Normalize axis
+    v = v / np.linalg.norm(v)
+    # Apply rotations to rotate us to X
+    theta_z = np.atan2(v[1], v[0])
+    v_1 = Rotz(theta_z) @ v
+    theta_y = np.atan2(v[2], v_1[0])
+    # Rotate so that the X axis points towards v, then rotate around X, then reverse the rotations
+    return Rotz(-theta_z) @ Roty(-theta_y) @ Rotx(alpha) @ Roty(theta_y) @ Rotz(theta_z)
 
 #
 #   Helper Function: Read URDF's HTML from /robot_description
@@ -257,9 +266,9 @@ class KinematicChain():
         ### INITIALIZE ###
         # We will build up three lists.  For each DOF (non-fixed, active
         # step) collect the type, position (pi), axis (ni) w.r.t. the base.
-        type = []
-        p    = []
-        n    = []
+        tyype = [] # sic (type is a builtin, shadowing it will almost certainly cause weird, hard-to-diagnose issues long-term)
+        p     = []
+        n     = []
 
         # Initialize the T matrix to walk up the chain, w.r.t. the base frame!
         T = Teye()
@@ -268,36 +277,18 @@ class KinematicChain():
         # We walk the chain, one URDF step at a time, adjusting T as we
         # go.  Each step could be a fixed or active URDF joint.
         for step in self.chain:
-
-            FIXME: Adjust the T matrix to incorporate this step
-            (move up the chain).
-
-            Note the step is of type URDFStep (see above) and contains:
-              step.Tshift     Fixed transform w.r.t. the previous frame
-              step.nlocal     Joint axis in the local (post-shift) frame
-              step.dof        Joint number
-            which also tell us
-              q[step.dof]     Joint position (angle or displacement)
-
             # Take action based on the joint type: Move the transform T
-            # up the kinematic chain (remaining w.r.t. the base frame).
-            if step.type is JointType.REVOLUTE:
-                # Revolute is a shift followed by a rotation:
-                T = ... FIXME
-    
-            elif step.type is JointType.LINEAR:
-                # Linear is a shift followed by a translation:
-                T = ... FIXME
-
-            else:
-                # Fixed is only a shift.
-                T = ... FIXME
-
+            # up the kinematic chain (remaining w.r.t. the base frame)
+            T = T @ step.Tshift @ (
+                T_from_Rp(Rot(step.nlocal, q[step.dof]), np.zeros(3)) if step.type is JointType.REVOLUTE else
+                T_from_Rp(Reye(), step.nlocal * q[step.dof]) if step.type is JointType.LINEAR else
+                Teye()
+            )
 
             # For active joints (our DOFs), store the type, positon (pi),
             # and axis (ni) info, w.r.t. the base frame.
             if step.type != JointType.FIXED:
-                type.append(step.type)
+                tyype.append(step.type)
                 p.append(p_from_T(T))
                 n.append(R_from_T(T) @ step.nlocal)
 
@@ -307,31 +298,22 @@ class KinematicChain():
 
         ### PHASE 2: USE ABOVE INFOMATION TO BUILD THE JACOBIAN ###
         # Collect the Jacobian for each active joint.
-        Jv = np.zeros((3,self.dofs))
-        Jw = np.zeros((3,self.dofs))
+        Jv = np.zeros((3, self.dofs))
+        Jw = np.zeros((3, self.dofs))
         for i in range(self.dofs):
+            if tyype[i] == JointType.FIXED:
+                continue
 
-            FIXME: Calculate the Jacobian.
-
-            This loops over the dofs, effectively ignoring the fixed
-            URDF joints.  They do not enter into the Jacobian.
-
-            After having walked up the chain above, we now have:
-            type[i]   Joint type
-            p[i]      Joint position w.r.t. world
-            n[i]      Joint axis w.r.t. world
-            
-            # Fill in the appropriate Jacobian column based on the
-            # type.  The Jacobian (like the data) is w.r.t. the base.
-            if type[i] is JointType.REVOLUTE:
-                # Revolute is a rotation:
-                Jv[:,i] = ... FIXME
-                Jw[:,i] = ... FIXME
-
-            elif type[i] is JointType.LINEAR:
-                # Linear is a translation:
-                Jv[:,i] = ... FIXME
-                Jw[:,i] = ... FIXME
+            Jv[:, i] = (
+                np.cross(n[i], ptip - p[i]) if tyype[i] == JointType.REVOLUTE else
+                n[i] if tyype[i] == JointType.LINEAR else
+                None
+            )
+            Jw[:, i] = (
+                n[i] if tyype[i] == JointType.REVOLUTE else
+                np.zeros(3) if tyype[i] == JointType.LINEAR else
+                None
+            )
 
         # Return the info
         return (ptip, Rtip, Jv, Jw)
