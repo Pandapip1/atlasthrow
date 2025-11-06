@@ -62,6 +62,7 @@ class TrajectoryNode(Node):
         vC = np.zeros(3)
         # https://www.symbolab.com/solver/matrix-calculator/rref%5Cbegin%7Bpmatrix%7D1%26-1%261%5E%7B2%7D%26-1%5E%7B3%7D%260%260%260%260%26a%5C%5C%20%20%20%200%20%260%260%260%261%261%261%5E%7B2%7D%261%5E%7B3%7D%26b%5C%5C%20%20%20%20%201%260%260%260%260%260%260%260%26c%5C%5C%20%20%20%200%260%260%260%261%260%260%260%26c%5C%5C%20%20%20%200%261%26-2%5Ccdot1%263%5Ccdot1%5E%7B2%7D%260%260%260%260%26d%5C%5C%20%20%20%200%260%260%260%260%261%262%5Ccdot1%263%5Ccdot1%5E%7B2%7D%26e%5C%5C%20%20%20%200%261%260%260%260%26-1%260%260%260%5C%5C%20%20%20%200%260%262%260%260%260%26-2%260%260%5Cend%7Bpmatrix%7D?or=input
         vB = (3/4 * (self.qF[2] - self.qF[0])) / timestep
+        print(f"vB: {vB}")
 
         # Assign final list
         self.vF = [vA, vB, vC]
