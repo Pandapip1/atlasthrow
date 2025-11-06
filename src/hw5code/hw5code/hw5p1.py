@@ -96,7 +96,7 @@ class TrajectoryNode(Node):
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
         # Stop everything after 8 seconds - makes the graphing nicer.
-        if self.t > 8:
+        if self.t > 12:
             self.future.set_result("Trajectory has ended")
             return
 
