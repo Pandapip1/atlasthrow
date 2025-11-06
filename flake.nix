@@ -113,6 +113,17 @@
               with pkgs;
               [
                 curl
+                # Add Qt dependencies
+                qt5.qtbase
+                qt5.qtwayland
+                qt5.qtx11extras
+                xorg.libX11
+                xorg.libxcb
+                xorg.libXcursor
+                xorg.libXext
+                xorg.libXi
+                xorg.libXrender
+                xorg.libXtst
               ]
             ) ++ (
               with pkgs.python3Packages; [
@@ -122,6 +133,8 @@
               ]
             );
             shellHook = ''
+              # For matplotlib:
+              # export QT_QPA_PLATFORM=wayland-egl
               export QT_QPA_PLATFORM=xcb
               colcon build --symlink-install
               source install/setup.bash
