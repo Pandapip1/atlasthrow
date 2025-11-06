@@ -50,9 +50,11 @@ class TrajectoryNode(Node):
         self.jointnames = ['theta1', 'theta2', 'theta3']
 
         # Define the three joint positions.
-        self.qA = np.radians(np.array([   0,  60, -120]))
-        self.qB = np.radians(np.array([ -90, 135,  -90]))
-        self.qC = np.radians(np.array([-180,   0,    0]))
+        self.qF = [
+            np.radians(np.array([   0,  60, -120])),
+            np.radians(np.array([ -90, 135,  -90])),
+            np.radians(np.array([-180,   0,    0]))
+        ]
 
         # FIXME: Add any other initializations you may need.
 
@@ -93,20 +95,18 @@ class TrajectoryNode(Node):
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
-        # # Stop everything after 8 seconds - makes the graphing nicer.
-        # if self.t > 8:
-        #     self.future.set_result("Trajectory has ended")
-        #     return
+        # Stop everything after 8 seconds - makes the graphing nicer.
+        if self.t > 8:
+            self.future.set_result("Trajectory has ended")
+            return
 
         # First modulo the time by 4 seconds
         t = fmod(self.t, 4.0)
 
         # Compute the joint values
-        if   (t < 2.0): (qd, qddot) = goto(t    , 2.0, self.qA, self.qB)
-        else:           (qd, qddot) = goto(t-2.0, 2.0, self.qB, self.qA)
-
-        # FIXME: Change the above trajectory.
-
+        currentLeg = round((self.t // 2) % 3)
+        nextLeg = (currentLeg + 1) % 3
+        (qd, qddot) = goto(t % 2, 2., self.qF[currentLeg], self.qF[nextLeg])
 
         ##############################################################
         # Finish by publishing the data:
