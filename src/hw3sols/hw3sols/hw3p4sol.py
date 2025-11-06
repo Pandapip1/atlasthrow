@@ -1,9 +1,10 @@
 '''
-hw5p1.py
+hw3p4.py
 
-   This is a skeleton for HW5 Problem 1.  PLEASE EDIT (SEARCH FOR FIXME)!
+   This is the solution code for HW3 Problem 4.
 
-   Repeatedly and smoothly move the 3DOF.
+   It creates a trajectory generation node to command the joint
+   movements.
 
    Node:        /trajectory
    Publish:     /joint_states           sensor_msgs/JointState
@@ -22,9 +23,7 @@ from geometry_msgs.msg  import TransformStamped
 from sensor_msgs.msg    import JointState
 from std_msgs.msg       import Header
 
-# Grab the Utilities
 from utils.TransformHelpers     import *
-from utils.TrajectoryUtils      import *
 
 
 #
@@ -46,17 +45,12 @@ class TrajectoryNode(Node):
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
 
+        # FIXME!  For now remove this line.  In the future, edit here!
+
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
-        self.jointnames = ['theta1', 'theta2', 'theta3']
+        self.jointnames = ['pan', 'tilt']
 
-        # Define the three joint positions.
-        self.qF = [
-            np.radians(np.array([   0,  60, -120])),
-            np.radians(np.array([ -90, 135,  -90])),
-            np.radians(np.array([-180,   0,    0]))
-        ]
-
-        # FIXME: Add any other initializations you may need.
+        # Initialize any variables that you want to store between cycles!
 
 
         ##############################################################
@@ -95,28 +89,34 @@ class TrajectoryNode(Node):
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
-        # Stop everything after 8 seconds - makes the graphing nicer.
-        if self.t > 12:
+        # FIXME!  Adjust these computations (and remove this line)
+
+        # Stop everything after one cycle - makes the graphing nicer.
+        if self.t > 2*pi:
             self.future.set_result("Trajectory has ended")
             return
 
-        # First modulo the time by 4 seconds
-        t = fmod(self.t, 4.0)
+        # Compute the joint values.  For now, we do this individually
+        # before building up numpy arrays.
+        theta_pan  =   pi/3 * sin(2*self.t)
+        omega_pan  = 2*pi/3 * cos(2*self.t)
 
-        # Compute the joint values
-        currentLeg = round((self.t // 2) % 3)
-        nextLeg = (currentLeg + 1) % 3
-        (qd, qddot) = goto(t % 2, 2., self.qF[currentLeg], self.qF[nextLeg])
+        theta_tilt =   pi/3 * sin(1*self.t) -   pi/9 * cos(6*self.t)
+        omega_tilt = 1*pi/3 * cos(1*self.t) + 6*pi/9 * sin(6*self.t)
+
+        # We build up numpy arrays, consistent with future computations.
+        q    = np.array([theta_pan, theta_tilt])
+        qdot = np.array([omega_pan, omega_tilt])
+
 
         ##############################################################
-        # Finish by publishing the data:
-        #  qd and qddot = Joint Desired   as  /joint_states  to view/plot
+        # Finish by publishing the data (here joint commands).
         header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.pubjoint.publish(JointState(
             header=header,
             name=self.jointnames,
-            position=qd.tolist(),
-            velocity=qddot.tolist()))
+            position=q.tolist(),
+            velocity=qdot.tolist()))
 
 
 #

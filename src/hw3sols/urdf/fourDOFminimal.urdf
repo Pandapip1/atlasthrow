@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<robot name="FourDOF">
+
+  <!-- *************************************************** -->
+  <!-- ***************** Kinematic Chain ***************** -->
+  <!-- *************************************************** -->
+
+  <link name="world">
+  </link>
+
+  <!-- Joint 1 -->
+  <joint name="theta1" type="continuous">
+    <parent link="world"/>
+    <child  link="frame1"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis   xyz="0 0 1"/>
+  </joint>
+
+  <link name="frame1">
+  </link>
+
+  <!-- Joint 2 -->
+  <joint name="theta2" type="continuous">
+    <parent link="frame1"/>
+    <child  link="frame2"/>
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="frame2">
+  </link>
+
+  <!-- Joint 3 -->
+  <joint name="theta3" type="continuous">
+    <parent link="frame2"/>
+    <child  link="frame3"/>
+    <origin xyz="0 0.4 0" rpy="0 0 0"/>
+    <axis   xyz="0 0 -1"/>
+  </joint>
+
+  <link name="frame3">
+  </link>
+
+  <!-- Joint 4 -->
+  <joint name="theta4" type="continuous">
+    <parent link="frame3"/>
+    <child  link="frame4"/>
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="frame4">
+  </link>
+
+  <!-- Tip -->
+  <joint name="final" type="fixed">
+    <parent link="frame4"/>
+    <child  link="tip"/>
+    <origin xyz="0 0.4 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tip">
+  </link>
+  
+</robot>

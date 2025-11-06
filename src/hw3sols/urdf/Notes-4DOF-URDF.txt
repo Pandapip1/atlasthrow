@@ -1,0 +1,24 @@
+We are showing several versions of the URDF:
+
+They differ in whether they
+
+  a) place the frames at the corners or at the center of the motors,
+  b) include the intermediate frames,
+  c) include visual elements for the links (long thin rods), the
+     motors (thick cylinders), or the fingers.
+
+All versions minimize the rotations.  That is, in the zero position,
+all frames are aligned (only shifted/translated as appropriate).
+
+
+
+	  Frame       Prime      Visual   Visual   Visual
+Version	  Location    Frames     Links    Motors   Fingers
+-------   --------    ------     ------   ------   -------
+
+minimal    corners      no         no       no       no
+
+short     mid-motor     no         yes      no       no
+full      mid-motor     no         yes     yes      yes
+long      mid-motor     yes        yes     yes      yes
+
