@@ -42,6 +42,16 @@ def Jac(q):
     return np.hstack((J1.reshape((3,1)), J2.reshape((3,1)), J3.reshape((3,1))))
 
 
+def Rot(v, alpha):
+    # Normalize axis
+    v = v / np.linalg.norm(v)
+    # Apply rotations to rotate us to X
+    theta_z = np.atan2(v[1], v[0])
+    v_1 = Rotz(theta_z) @ v
+    theta_y = np.atan2(v[2], v_1[0])
+    # Rotate so that the X axis points towards v, then rotate around X, then reverse the rotations
+    return Rotz(-theta_z) @ Roty(-theta_y) @ Rotx(alpha) @ Roty(theta_y) @ Rotz(theta_z)
+
 #
 #   Trajectory Generator Node Class
 #
@@ -109,6 +119,10 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
+        if self.t > 15:
+            self.future.set_result("Trajectory has ended")
+            return
+
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
@@ -123,17 +137,15 @@ class TrajectoryNode(Node):
             (alpha, alphadot) = goto(self.t, 2, 0, -np.pi / 2)
             (beta,  betadot)  = (0.0, 0.0)
         else:
-            # To test only part A use.  FIXME remove this later.
-            self.future.set_result("Part A has ended")
-            return
-
             # Part B (t>2):
-            # (alpha, alphadot) = ... FIXME
-            # (beta,  betadot)  = ... FIXME
+            (alpha, alphadot) = (-np.pi / 2, 0.0)
+            (beta,  betadot)  = (self.t - 3 + np.e**(2-self.t), 1-np.e**(2-self.t))
 
         # Set up the desired rotation and angular velocity.
-        R_d = Roty(alpha)
-        omega_d = np.array([0, alphadot, 0])
+        axis = np.linalg.inv(Roty(alpha)) @ np.array([0.05, 0.05, 0])
+        axis = axis / np.linalg.norm(axis)
+        R_d = Roty(alpha) @ Rot(axis, beta)
+        omega_d = np.array([0, alphadot, 0]) + axis * betadot
 
         # Grab the last joint command position and task error.
         last_q_c = self.q_c
