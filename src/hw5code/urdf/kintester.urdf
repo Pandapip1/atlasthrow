@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+
+<robot name="kintester">
+  
+  <!-- *************************************************** -->
+  <!-- ******************** Kinematics ******************* -->
+  <!-- *************************************************** -->
+
+  <link name="world"/>
+
+  <joint name="shift1" type="fixed">
+    <parent link="world"/>
+    <child  link="linkA"/>
+    <origin xyz="0.1 0.2 0.3" rpy="0.4 0.5 0.6"/>
+  </joint>
+
+  <link name="linkA"/>
+
+  <joint name="theta1" type="continuous">
+    <parent link="linkA"/>
+    <child  link="linkB"/>
+    <origin xyz="-0.4 0.3 0.7" rpy="0.9 -0.3 0.2"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="linkB"/>
+
+  <joint name="theta2" type="continuous">
+    <parent link="linkB"/>
+    <child  link="linkC"/>
+    <origin xyz="0.2 -0.8 -0.9" rpy="0.1 0.4 -0.3"/>
+    <axis   xyz="1 0 0"/>
+  </joint>
+
+  <link name="linkC"/>
+
+  <joint name="d3" type="prismatic">
+    <parent link="linkC"/>
+    <child  link="linkD"/>
+    <origin xyz="-0.4 0.1 0.3" rpy="-0.3 0.2 0.1"/>
+    <axis   xyz="0 1 0"/>
+    <limit  lower="0.5" upper="1" velocity="1" effort="999"/>
+  </joint>
+
+  <link name="linkD"/>
+
+  <joint name="shift2" type="fixed">
+    <parent link="linkD"/>
+    <child  link="linkE"/>
+    <origin xyz="-0.5 0.3 -0.2" rpy="-0.2 0.4 -0.6"/>
+  </joint>
+
+  <link name="linkE"/>
+
+  <joint name="theta4" type="continuous">
+    <parent link="linkE"/>
+    <child  link="linkF"/>
+    <origin xyz="0.0 0.4 -0.6" rpy="0.5 0.4 0.3"/>
+    <axis   xyz="0 0 1"/>
+  </joint>
+
+  <link name="linkF"/>
+
+  <joint name="final" type="fixed">
+    <parent link="linkF"/>
+    <child  link="tip"/>
+    <origin xyz="0.05 0.15 -0.15" rpy="0.05 -0.15 -0.25"/>
+  </joint>
+
+  <link name="tip"/>
+
+
+</robot>
