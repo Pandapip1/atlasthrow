@@ -14,6 +14,7 @@ hw5p2.py
 import rclpy
 import numpy as np
 import tf2_ros
+import itertools
 
 from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
 
@@ -32,6 +33,15 @@ from utils.TrajectoryUtils      import *
 from hw4sols.hw4p1sol           import fkin, Jac
 
 
+class Target:
+    def __init__(self, t_d, q_d, qdot_d):
+        self.t_d = t_d
+        self.q_d = q_d
+        self.qdot_d = qdot_d
+    
+    def __repr__(self):
+        return f"(t_d = {self.t_d}, q_d = {self.q_d}, qdot_d = {self.qdot_d})"
+
 #
 #   Trajectory Generator Node Class
 #
@@ -47,12 +57,22 @@ class TrajectoryNode(Node):
         # Initialize the node and store the future object (to end).
         super().__init__(name)
         self.future = future
+        self.jointnames = ['theta1', 'theta2', 'theta3']
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
 
-        FIXME: Copy your code from P1.
+        timestep = 2
+        qF = [
+            np.radians(np.array([   0,  60, -120])),
+            np.radians(np.array([ -90, 135,  -90])),
+            np.radians(np.array([-180,   0,    0]))
+        ]
+        vF = [np.zeros(3), (3/4 * (qF[2] - qF[0])) / timestep, np.zeros(3)]
 
+        self.target_queue = (Target(timestep * i, qF[i % 3], vF[i % 3]) for i in range(7))
+        self.previous_target = next(self.target_queue)
+        self.current_target = next(self.target_queue)
 
         ##############################################################
         # Setup the logistics of the node:
@@ -91,14 +111,25 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
+        # Update the target
+        try:
+            if self.current_target.t_d <= self.t:
+                self.previous_target = self.current_target
+                self.current_target = next(self.target_queue)
+                print(f"New target: {self.current_target}")
+        except StopIteration:
+            self.future.set_result("Trajectory has ended")
+            return
+
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
+        (qc, qcdot) = spline(self.t - self.previous_target.t_d, self.current_target.t_d - self.previous_target.t_d, self.previous_target.q_d, self.current_target.q_d, self.previous_target.qdot_d, self.current_target.qdot_d)
 
-        FIXME: Copy your code from P1.
-
-        FIXME: Add the code to support the updated/expanded publications.
-        (see also the publishers below)
-
+        # Compute the joint values
+        p_d = fkin(qc)
+        v_d = Jac(qc) * qcdot
+        R_d = np.eye(3)
+        omega_d = np.zeros(3)
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
@@ -113,14 +144,14 @@ class TrajectoryNode(Node):
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(Rd,pd)))
+            pose=Pose_from_Rp(R_d, p_d)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vd,wd)))
+            twist=Twist_from_vw(v_d, omega_d)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(Rd,pd)))
+            transform=Transform_from_Rp(R_d, p_d)))
 
 
 #
