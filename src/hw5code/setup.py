@@ -31,7 +31,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'hw5p1      = hw5code.hw5p1:main',
+            'hw5p1a     = hw5code.hw5p1a:main',
+            'hw5p1b     = hw5code.hw5p1b:main',
             'hw5p2      = hw5code.hw5p2:main',
             'hw5p3      = hw5code.hw5p3:main',
             'hw5p4      = hw5code.hw5p4:main',
