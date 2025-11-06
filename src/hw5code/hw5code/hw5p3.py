@@ -15,6 +15,8 @@ import rclpy
 import numpy as np
 import tf2_ros
 
+from abc import ABC, abstractmethod
+
 from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
 
 from asyncio            import Future
@@ -29,7 +31,7 @@ from utils.TransformHelpers     import *
 from utils.TrajectoryUtils      import *
 
 # Also import the 3DOF kinematics.
-from hw4code.hw4p1              import fkin, Jac
+from hw4sols.hw4p1sol           import fkin, Jac
 
 
 #
@@ -61,12 +63,11 @@ class TrajectoryNode(Node):
         self.qF = None
         self.xF = np.array([0.5, -0.5, 1.0])
 
+        self.prev_pD = self.xA
+        self.prev_qC = self.qA
+
         # Select the leg duration.
         self.T = 3.0
-
-
-        FIXME: Initialize the parameters and anything stored between cycles!
-
 
         ##############################################################
         # Setup the logistics of the node:
@@ -109,21 +110,33 @@ class TrajectoryNode(Node):
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
         # # Stop everything after two cycles - makes the graphing nicer.
-        # if self.t > 4*self.T:
-        #     self.future.set_result("Trajectory has ended")
-        #     return
+        if self.t > 4*self.T:
+            self.future.set_result("Trajectory has ended")
+            return
 
         # First modulo the time by 2 legs.
         t = fmod(self.t, 2*self.T)
 
+        lamdba = 20
 
-        FIXME: Compute the desired motion and inverse kinematics...
+        if t > self.T:
+            (q_c, qdot_c) = goto(t - self.T, self.T, self.qF, self.qA)
+            p_d = fkin(q_c)
+            v_d = Jac(q_c) * qdot_c
+        else:
+            (p_d, v_d) = goto(t, self.T, self.xA, self.xF)
+            qdot_c = np.linalg.inv(Jac(self.prev_qC)) @ (v_d + lamdba * (self.prev_pD - fkin(self.prev_qC)))
+            q_c = self.prev_qC + qdot_c * self.dt
 
+        self.prev_pD = p_d
+        self.prev_qC = q_c
 
         # Ignore any rotation (orientation and angular velocity).
-        Rd = Reye()
-        wd = vzero()
+        R_d = Reye()
+        omega_d = vzero()
 
+        if t + self.dt > self.T and self.qF is None:
+            self.qF = q_c
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
@@ -134,18 +147,18 @@ class TrajectoryNode(Node):
         self.pubjoint.publish(JointState(
             header=header,
             name=self.jointnames,
-            position=qc.tolist(),
-            velocity=qcdot.tolist()))
+            position=q_c.tolist(),
+            velocity=qdot_c.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(Rd,pd)))
+            pose=Pose_from_Rp(R_d, p_d)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vd,wd)))
+            twist=Twist_from_vw(v_d, omega_d)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(Rd,pd)))
+            transform=Transform_from_Rp(R_d, p_d)))
 
 
 #
