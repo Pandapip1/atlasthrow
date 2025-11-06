@@ -56,6 +56,17 @@ class TrajectoryNode(Node):
             np.radians(np.array([-180,   0,    0]))
         ]
 
+        # Precompute velocity data
+        timestep = 2
+        vA = np.zeros(3)
+        vC = np.zeros(3)
+        # https://www.symbolab.com/solver/matrix-calculator/rref%5Cbegin%7Bpmatrix%7D1%26-1%261%5E%7B2%7D%26-1%5E%7B3%7D%260%260%260%260%26a%5C%5C%20%20%20%200%20%260%260%260%261%261%261%5E%7B2%7D%261%5E%7B3%7D%26b%5C%5C%20%20%20%20%201%260%260%260%260%260%260%260%26c%5C%5C%20%20%20%200%260%260%260%261%260%260%260%26c%5C%5C%20%20%20%200%261%26-2%5Ccdot1%263%5Ccdot1%5E%7B2%7D%260%260%260%260%26d%5C%5C%20%20%20%200%260%260%260%260%261%262%5Ccdot1%263%5Ccdot1%5E%7B2%7D%26e%5C%5C%20%20%20%200%261%260%260%260%26-1%260%260%260%5C%5C%20%20%20%200%260%262%260%260%260%26-2%260%260%5Cend%7Bpmatrix%7D?or=input
+        vB = (3/4 * (self.qF[2] - self.qF[0])) / timestep
+
+        # Assign final list
+        self.vF = [vA, vB, vC]
+
+
         ##############################################################
         # Setup the logistics of the node:
         # Add a publisher to send the joint commands.
@@ -103,7 +114,7 @@ class TrajectoryNode(Node):
         # Compute the joint values
         currentLeg = round((self.t // 2) % 3)
         nextLeg = (currentLeg + 1) % 3
-        (qd, qddot) = goto(t % 2, 2., self.qF[currentLeg], self.qF[nextLeg])
+        (qd, qddot) = spline(t % 2, 2., self.qF[currentLeg], self.qF[nextLeg], self.vF[currentLeg], self.vF[nextLeg])
 
         ##############################################################
         # Finish by publishing the data:
