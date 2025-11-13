@@ -14,6 +14,7 @@ hw6p4sol.py
 
 import rclpy
 import numpy as np
+import scipy as sp
 import tf2_ros
 
 from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
@@ -32,6 +33,17 @@ from utils.TrajectoryUtils      import *
 # Grab the general fkin from HW5 P5.
 from hw5code.KinematicChain     import KinematicChain
 
+import sys
+
+def Rot(v, alpha):
+    # Normalize axis
+    v = v / np.linalg.norm(v)
+    # Apply rotations to rotate us to X
+    theta_z = np.atan2(v[1], v[0])
+    v_1 = Rotz(theta_z) @ v
+    theta_y = np.atan2(v[2], v_1[0])
+    # Rotate so that the X axis points towards v, then rotate around X, then reverse the rotations
+    return Rotz(-theta_z) @ Roty(-theta_y) @ Rotx(alpha) @ Roty(theta_y) @ Rotz(theta_z)
 
 #
 #   Trajectory Generator Node Class
@@ -51,12 +63,33 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
+        self.jointnames=['theta1','theta2','theta3','theta4','theta5','theta6']
 
-        FIXME: WHAT DO YOU NEED TO DO TO INITIALIZE THE LOGISTICS?
+        self.chain = KinematicChain(self, 'world', 'tip', self.jointnames)
 
-        FIXME: WHAT DO YOU NEED TO DO TO INITIALIZE THE TRAJECTORY?
+        self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
+        self.targets = [
+            np.array([0.3, 0.5, 0.15]),
+            np.array([-0.3, 0.5, 0.15])
+        ]
+        self.targets_R = [
+            np.array([
+                [0, 1, 0],
+                [0, 0, -1],
+                [-1, 0, 0]
+            ]),
+            np.eye(3)
+        ]
+        self.thru_target = np.array([0, 0.5, 0.5])
+        self.last_target_index = 0
+        self.target_index = 0
+        self.target_initial_t = 0
+        self.target_final_t = 3
 
-        FIXME: REUSE THE PREVIOUS INVERSE KINEMATICS INITIALIZATION.
+        ##############################################################
+        # Inverse kinematics setup
+        self.qlast = self.q0
+        self.qdotlast = np.zeros(6)
 
 
         ##############################################################
@@ -98,10 +131,76 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
+        ptip, Rtip, Jv, Jw = self.chain.fkin(self.qlast)
 
-        FIXME: IMPLEMENT THE TRAJECTORY.
+        if self.t >= self.target_final_t:
+            self.last_target_index = self.target_index
+            self.target_index = (self.target_index + 1) % len(self.targets)
+            self.target_initial_t = self.t
+            self.target_final_t = self.t + 5
 
-        FIXME: REUSE THE PREVIOUS INVERSE KINEMATICS UPDATE.
+        target_thru_t = (self.target_initial_t + self.target_final_t) / 2.
+
+        if self.t < target_thru_t:
+            pd, vd = spline(
+                self.dt,
+                target_thru_t - self.t + self.dt,
+                ptip,
+                self.thru_target,
+                Jv @ self.qdotlast,
+                (self.targets[self.target_index] - self.targets[self.last_target_index]) / (self.target_final_t - self.target_initial_t)
+            )
+        else:
+            pd, vd = spline(
+                self.dt,
+                self.target_final_t - self.t + self.dt,
+                ptip,
+                self.targets[self.target_index],
+                Jv @ self.qdotlast,
+                np.zeros(3)
+            )
+        
+        # Rotation is independent: calculate angle between current and previous,
+        # axis, and current angular velocity and spline it. Completely ignore the
+        # intermediate
+        Rrel_traj = Rtip.T @ self.targets_R[self.target_index]
+        theta_dist = np.arccos(np.clip((np.trace(Rrel_traj) - 1) / 2, -1.0, 1.0))
+        axis = np.array([Rrel_traj[2, 1] - Rrel_traj[1, 2], Rrel_traj[0, 2] - Rrel_traj[2, 0], Rrel_traj[1, 0] - Rrel_traj[0, 1]])
+        axis = axis / np.linalg.norm(axis)
+        sys.stdout.flush()
+        thetad, thetawd = spline(
+            self.dt,
+            self.target_final_t - self.t + self.dt,
+            0,
+            theta_dist,
+            np.dot(axis, Jw @ self.qdotlast),
+            0,
+        )
+        Rd = np.eye(3) #Rtip @ Rot(axis, thetad)
+        wd = np.zeros(3) #thetad / self.dt * axis
+
+        ##############################################################
+        # Inverse kinematics
+
+        lam = 0
+
+        Jv_inv = Jv.T @ np.linalg.inv(Jv @ Jv.T + (lam**2) * np.eye(Jv.shape[0]))
+
+        # Stay inside the null space of the velocity jacobian, ensures angle changes don't cause position changes
+        Nv = np.eye(Jv.shape[1]) - Jv_inv @ Jv
+        Jw_Nv = Jw @ Nv
+        Jw_inv = Nv @ Jw_Nv.T @ np.linalg.inv(Jw_Nv @ Jw_Nv.T + (lam**2) * np.eye(Jw_Nv.shape[0]))
+
+        vc = (pd - ptip) / self.dt
+
+        Rrel = Rd @ Rtip.T
+        wc = np.array([Rrel[2, 1] - Rrel[1, 2], Rrel[0, 2] - Rrel[2, 0], Rrel[1, 0] - Rrel[0, 1]]) / self.dt
+
+        qcdot = Jv_inv @ vc + Jw_inv @ wc
+        qc = self.qlast + qcdot * self.dt
+
+        self.qlast = qc
+        self.qdotlast = qcdot
 
 
         ##############################################################

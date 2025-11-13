@@ -129,6 +129,7 @@
               with pkgs.python3Packages; [
                 python
                 numpy
+                scipy
                 matplotlib
               ]
             );
