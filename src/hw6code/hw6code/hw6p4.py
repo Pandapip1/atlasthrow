@@ -132,6 +132,10 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
+        if self.t > 23.0:
+            self.future.set_result("Trajectory has ended")
+            return
+
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
         ptip, Rtip, Jv, Jw = self.chain.fkin(self.qlast)
@@ -147,7 +151,7 @@ class TrajectoryNode(Node):
         prev_target = self.targets[self.last_target_index] if self.last_target_index != -1 else self.p0
 
         if self.t < target_thru_t:
-            pd, _ = spline(
+            pd, vd = spline(
                 self.t - self.target_initial_t,
                 target_thru_t - self.target_initial_t,
                 prev_target,
@@ -156,7 +160,7 @@ class TrajectoryNode(Node):
                 (self.targets[self.target_index] - prev_target) / (self.target_final_t - self.target_initial_t)
             )
         else:
-            pd, _ = spline(
+            pd, vd = spline(
                 self.t - target_thru_t,
                 self.target_final_t - target_thru_t,
                 self.thru_target,
@@ -203,9 +207,9 @@ class TrajectoryNode(Node):
         self.qdotlast = qcdot
 
         ##############################################################
-        # Computed velocity and angular velocity
-        vd = Jv * qcdot
-        wd = Jw * qcdot
+        # Computed angular velocity
+        _, _, _, Jwnew = self.chain.fkin(qc)
+        wd = Jwnew * qcdot
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
