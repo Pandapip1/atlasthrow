@@ -132,7 +132,7 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
-        if self.t > 23.0:
+        if self.t > 8.0:
             self.future.set_result("Trajectory has ended")
             return
 
@@ -144,7 +144,7 @@ class TrajectoryNode(Node):
             self.last_target_index = self.target_index
             self.target_index = (self.target_index + 1) % len(self.targets)
             self.target_initial_t = self.t
-            self.target_final_t = self.t + 5
+            self.target_final_t = self.t + 2.5
 
         target_thru_t = (self.target_initial_t + self.target_final_t) / 2.
 
