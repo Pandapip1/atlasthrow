@@ -68,20 +68,23 @@ class TrajectoryNode(Node):
         self.chain = KinematicChain(self, 'world', 'tip', self.jointnames)
 
         self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
+        ptip, Rtip, Jv, Jw = self.chain.fkin(self.q0)
+        self.p0 = ptip
+        self.R0 = Rtip
         self.targets = [
-            np.array([0.3, 0.5, 0.15]),
-            np.array([-0.3, 0.5, 0.15])
+            np.array([-0.3, 0.5, 0.15]),
+            np.array([0.3, 0.5, 0.15])
         ]
         self.targets_R = [
+            np.eye(3),
             np.array([
                 [0, 1, 0],
                 [0, 0, -1],
                 [-1, 0, 0]
-            ]),
-            np.eye(3)
+            ]).T
         ]
         self.thru_target = np.array([0, 0.5, 0.5])
-        self.last_target_index = 0
+        self.last_target_index = -1
         self.target_index = 0
         self.target_initial_t = 0
         self.target_final_t = 3
@@ -141,43 +144,40 @@ class TrajectoryNode(Node):
 
         target_thru_t = (self.target_initial_t + self.target_final_t) / 2.
 
+        prev_target = self.targets[self.last_target_index] if self.last_target_index != -1 else self.p0
+
         if self.t < target_thru_t:
-            pd, vd = spline(
-                self.dt,
-                target_thru_t - self.t + self.dt,
-                ptip,
+            pd, _ = spline(
+                self.t - self.target_initial_t,
+                target_thru_t - self.target_initial_t,
+                prev_target,
                 self.thru_target,
-                Jv @ self.qdotlast,
-                (self.targets[self.target_index] - self.targets[self.last_target_index]) / (self.target_final_t - self.target_initial_t)
+                np.zeros(3),
+                (self.targets[self.target_index] - prev_target) / (self.target_final_t - self.target_initial_t)
             )
         else:
-            pd, vd = spline(
-                self.dt,
-                self.target_final_t - self.t + self.dt,
-                ptip,
+            pd, _ = spline(
+                self.t - target_thru_t,
+                self.target_final_t - target_thru_t,
+                self.thru_target,
                 self.targets[self.target_index],
-                Jv @ self.qdotlast,
-                np.zeros(3)
+                (self.targets[self.target_index] - prev_target) / (self.target_final_t - self.target_initial_t),
+                np.zeros(3),
             )
         
         # Rotation is independent: calculate angle between current and previous,
         # axis, and current angular velocity and spline it. Completely ignore the
         # intermediate
         Rrel_traj = Rtip.T @ self.targets_R[self.target_index]
-        theta_dist = np.arccos(np.clip((np.trace(Rrel_traj) - 1) / 2, -1.0, 1.0))
-        axis = np.array([Rrel_traj[2, 1] - Rrel_traj[1, 2], Rrel_traj[0, 2] - Rrel_traj[2, 0], Rrel_traj[1, 0] - Rrel_traj[0, 1]])
-        axis = axis / np.linalg.norm(axis)
-        sys.stdout.flush()
-        thetad, thetawd = spline(
-            self.dt,
-            self.target_final_t - self.t + self.dt,
+        interm, _ = spline(
+            self.t - self.target_initial_t,
+            self.target_final_t - self.target_initial_t,
             0,
-            theta_dist,
-            np.dot(axis, Jw @ self.qdotlast),
+            1,
             0,
+            0
         )
-        Rd = np.eye(3) #Rtip @ Rot(axis, thetad)
-        wd = np.zeros(3) #thetad / self.dt * axis
+        Rd = Rtip @ sp.linalg.expm(interm * sp.linalg.logm(Rrel_traj))
 
         ##############################################################
         # Inverse kinematics
@@ -202,6 +202,10 @@ class TrajectoryNode(Node):
         self.qlast = qc
         self.qdotlast = qcdot
 
+        ##############################################################
+        # Computed velocity and angular velocity
+        vd = Jv * qcdot
+        wd = Jw * qcdot
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
@@ -224,6 +228,7 @@ class TrajectoryNode(Node):
             header=header,
             child_frame_id='desired',
             transform=Transform_from_Rp(Rd,pd)))
+        sys.stdout.flush()
 
 
 #
