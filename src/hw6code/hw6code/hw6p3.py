@@ -68,7 +68,7 @@ class TrajectoryNode(Node):
         self.plow  = np.array([0.0, 0.5, 0.3])
         self.phigh = np.array([0.0, 0.5, 0.9])
 
-        FIXME: WHAT ELSE DO WE NEED TO INITIALIZE FOR THE INVERSE KINEMATICS?
+        self.qlast = self.q0
 
 
         ##############################################################
@@ -112,9 +112,9 @@ class TrajectoryNode(Node):
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
         # # Stop everything after 11s - makes the graphing nicer.
-        # if self.t > 11.0:
-        #     self.future.set_result("Trajectory has ended")
-        #     return
+        if self.t > 11.0:
+            self.future.set_result("Trajectory has ended")
+            return
 
         # Decide which phase we are in:
         if self.t < 3.0:
@@ -147,9 +147,24 @@ class TrajectoryNode(Node):
             Rd = Rotz(pi/2 * sR)
             wd = nz() * (pi/2 * sRdot)
 
-        
-        FIXME: IMPLEMENT THE FULL 6 DOF INVERSE KINEMATICS.
+        ptip, Rtip, Jv, Jw = self.chain.fkin(self.qlast)
 
+        vc = (pd - ptip) / self.dt
+
+        Rrel = Rd @ Rtip.T
+        wc = np.array([Rrel[2, 1] - Rrel[1, 2], Rrel[0, 2] - Rrel[2, 0], Rrel[1, 0] - Rrel[0, 1]]) / self.dt
+
+        Jv_inv = Jv.T @ np.linalg.inv(Jv @ Jv.T)
+
+        # Stay inside the null space of the velocity jacobian, ensures angle changes don't cause position changes
+        Nv = np.eye(Jv.shape[1]) - Jv_inv @ Jv
+        Jw_Nv = Jw @ Nv
+        Jw_inv = Nv @ Jw_Nv.T @ np.linalg.inv(Jw_Nv @ Jw_Nv.T)
+
+        qcdot = Jv_inv @ vc + Jw_inv @ wc
+        qc = self.qlast + qcdot * self.dt
+
+        self.qlast = qc
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
