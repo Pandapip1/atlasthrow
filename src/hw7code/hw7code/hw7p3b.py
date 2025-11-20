@@ -74,8 +74,8 @@ class TrajectoryNode(Node):
 
         # Pick the convergence bandwidth.
         self.lam = 20
-        self.lam_secondary = 50
-        self.lam_damp = 0.15
+        self.lam_secondary = 100
+        self.lam_damp = 0.05
 
 
         ##############################################################
