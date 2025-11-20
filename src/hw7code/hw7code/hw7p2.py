@@ -26,6 +26,7 @@ from utils.TrajectoryUtils      import *
 
 # Grab the general fkin from HW5 P5.
 from hw5sols.KinematicChainSol  import KinematicChain
+from hw7code.repulsion import repulsion
 
 
 #
@@ -46,13 +47,15 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
-        self.variation = "A"
+        self.variation = "C"
 
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
         self.jointnames=['theta1','theta2','thetaX','theta3','theta4','theta5','theta6']
 
         # Set up the kinematic chain object.
         self.chain = KinematicChain(self, 'world', 'tip', self.jointnames)
+        self.elbowchain=KinematicChain(self,"world","elbow",self.jointnames[0:4])
+        self.wristchain=KinematicChain(self,"world","wrist",self.jointnames[0:5])
 
         # Define the matching initial joint/task positions.
         self.q0 = np.radians(np.array([0, 90, 0, -90, 0, 0, 0]))
@@ -71,7 +74,7 @@ class TrajectoryNode(Node):
         self.qc = self.q0.copy()
         self.ep = vzero()
         self.eR = vzero()
-        if self.variation == "A":
+        if self.variation == "A" or self.variation == "C":
             self.ec = np.array([0.])
         elif self.variation == "B":
             self.ec = np.array([0.])
@@ -80,7 +83,17 @@ class TrajectoryNode(Node):
 
         # Pick the convergence bandwidth.
         self.lam = 20
+        self.lam_secondary = 10
 
+        self.ranges = np.array([
+            [-np.pi, np.pi / 2],
+            [-np.pi, np.pi / 2],
+            [0, np.pi],
+            [-np.pi, 0],
+            [-np.pi / 2, np.pi / 2],
+            [-np.pi / 2, np.pi / 2],
+            [-np.pi / 2, np.pi / 2],
+        ])
 
         ##############################################################
         # Setup the logistics of the node:
@@ -173,7 +186,7 @@ class TrajectoryNode(Node):
                 nleft = np.array([1, 1, -1]) / sqrt(3)
                 Rd    = Rotn(nleft, -alpha)
                 wd    = - nleft * alphadot
-        if self.variation == "A":
+        if self.variation == "A" or self.variation == "C":
             cd = np.array([0.])
         elif self.variation == "B":
             cd = np.array([0.])
@@ -188,10 +201,10 @@ class TrajectoryNode(Node):
 
         # Compute the old forward kinematics to get the Jacobians.
         (_, _, Jv, Jw) = self.chain.fkin(qclast)
-        if self.variation == "A":
+        if self.variation == "A" or self.variation == "C":
             Jc = np.array([[
                 0., 0., 0., 0., 0., 0., 0.
-            ]], dtype=float)
+            ]])
         elif self.variation == "B":
             Jc = np.array([[
                 0.5, 0., 1., 0., 0., 0., 0.
@@ -204,10 +217,20 @@ class TrajectoryNode(Node):
         wr = wd + self.lam * eRlast
         cr = cd + self.lam * eclast
 
+        # Compute the commanded gradient of our secondary
+        if self.variation == "A" or self.variation == "B":
+            g = np.array([0., 0., 0., 0., 0., 0., 0.])
+        elif self.variation == "C":
+            g = (qclast - (self.ranges[:, 0] + self.ranges[:, 1]) * 0.5) / (self.ranges[:, 1] - self.ranges[:, 0])
+        else:
+            raise Exception("oops wrong variation")
+
         # Compute the inverse kinematics.
         J     = np.vstack((Jv, Jw, Jc))
+        J_inv = np.linalg.pinv(J)
         xrdot = np.concatenate((vr, wr, cr))
-        qcdot = np.linalg.pinv(J) @ xrdot
+        N     = np.eye(qclast.size) - J_inv @ J
+        qcdot = J_inv @ xrdot - self.lam_secondary * (N @ g)
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
