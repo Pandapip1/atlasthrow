@@ -120,11 +120,6 @@ class TrajectoryNode(Node):
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
 
-        # # Stop everything after 8s - makes the graphing nicer.
-        if self.t > 8.0:
-            self.future.set_result("Trajectory has ended")
-            return
-
         pd = np.array([
             0,
             0.95 - 0.25 * np.cos(self.t),
