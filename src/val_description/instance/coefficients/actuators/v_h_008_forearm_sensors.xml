@@ -1,0 +1,39 @@
+<CoeffData>
+    <Properties>
+      <CalibrationDate/>
+      <FileGenDate date="2014-12-19" time="11:13:39.501828"/>
+    </Properties>
+    <ClassFile id="h.xml" />
+    <ControllerFile id="h_sv.xml" />
+    <LocationFile id="finger.xml"/>
+    <SensorsFile id="sensors_leonidas.xml" />
+    <SafetyFile id="safety_fingers.xml" />
+  <Coeffs>
+    <Coeff value="-0.00502983574213" id="ThumbRoll_A" description="Thumb Roll Hall Sensor Coefficient A"/>
+    <Coeff value="2.32493074835" id="ThumbRoll_B" description="Thumb Roll Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00368740926629" id="ThumbProximal_A" description="Thumb Proximal Hall Sensor Coefficient A"/>
+    <Coeff value="0.213071064608" id="ThumbProximal_B" description="Thumb Proximal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00483042302833" id="ThumbMedial_A" description="Thumb Medial Hall Sensor Coefficient A"/>
+    <Coeff value="-0.336593952549" id="ThumbMedial_B" description="Thumb Medial Hall Sensor Coefficient B"/>
+    <Coeff value="-0.0315586264118" id="ThumbDistal_A" description="Thumb Distal Hall Sensor Coefficient A"/>
+    <Coeff value="-0.00137211419182" id="ThumbDistal_B" description="Thumb Distal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00362422124589" id="IndexProximal_A" description="Index Proximal Hall Sensor Coefficient A"/>
+    <Coeff value="0.225854615106" id="IndexProximal_B" description="Index Proximal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00500236432888" id="IndexMedial_A" description="Index Medial Hall Sensor Coefficient A"/>
+    <Coeff value="0.373849457" id="IndexMedial_B" description="Index Medial Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00860073235071" id="IndexDistal_A" description="Index Distal Hall Sensor Coefficient A"/>
+    <Coeff value="1.7211212875" id="IndexDistal_B" description="Index Distal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00920547780676" id="MiddleProximal_A" description="Middle Proximal Hall Sensor Coefficient A"/>
+    <Coeff value="1.76292308392" id="MiddleProximal_B" description="Middle Proximal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00660279672881" id="MiddleMedial_A" description="Middle Medial Hall Sensor Coefficient A"/>
+    <Coeff value="-0.0411889398753" id="MiddleMedial_B" description="Middle Medial Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00155523778954" id="MiddleDistal_A" description="Middle Distal Hall Sensor Coefficient A"/>
+    <Coeff value="-3.07967879117e-06" id="MiddleDistal_B" description="Middle Distal Hall Sensor Coefficient B"/>
+    <Coeff value="-0.00193924197466" id="PinkyProximal_A" description="Pinky Proximal Hall Sensor Coefficient A"/>
+    <Coeff value="-4.97241531963e-06" id="PinkyProximal_B" description="Pinky Proximal Hall Sensor Coefficient B"/>
+    <Coeff value="-1.3526301703" id="PinkyMedial_A" description="Pinky Medial Hall Sensor Coefficient A"/>
+    <Coeff value="526.173136245" id="PinkyMedial_B" description="Pinky Medial Hall Sensor Coefficient B"/>
+    <Coeff value="1.1780972451" id="PinkyDistal_A" description="Pinky Distal Hall Sensor Coefficient A"/>
+    <Coeff value="-484.197967734" id="PinkyDistal_B" description="Pinky Distal Hall Sensor Coefficient B"/>
+  </Coeffs>
+</CoeffData>

@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v1/index_finger">
+
+  <xacro:include filename="$(find val_description)/common/xacro/joint_names/valkyrie_joint_names.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/index_finger/joint_axes.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/index_finger/joint_limits.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/index_finger/frame_parameters.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/index_finger/mechanical_info.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/index_finger/mass_parameters.xacro"/>
+  <xacro:include filename="$(find val_description)/model/robots/common/xacro/gazebo_hand_contact.xacro"/>
+
+  <xacro:macro name="make_index_finger" params="prefix reflect index_finger_root_link">
+    
+    <xacro:standard_link name="${prefix}IndexFingerPitch1Link" 
+                    mass="${IndexFingerPitch1LinkMass}" 
+                    origin_xyz="0 ${reflect*0.02} 0"
+                    ixx="${IndexFingerPitch1LinkInertia_IXX}" ixy="${reflect*0.000000060}" ixz="${reflect*0.000000008}"
+                    iyy="${IndexFingerPitch1LinkInertia_IYY}" iyz="${IndexFingerPitch1LinkInertia_IYZ}" izz="${IndexFingerPitch1LinkInertia_IZZ}"
+                    origin_rpy="0 0 0" 
+                    visual_mesh="${fingers_mesh_dir}/indexj1_${prefix}.dae"
+                    collision_mesh="${fingers_mesh_dir}/indexj1_${prefix}.dae"/>
+    <xacro:gazebo_hand_contact link_name="${prefix}IndexFingerPitch1Link" />
+
+    <xacro:standard_link name="${prefix}IndexFingerPitch2Link" 
+                    mass="${IndexFingerPitch2LinkMass}" 
+                    origin_xyz="0 ${reflect*0.013} 0"
+                    ixx="${IndexFingerPitch2LinkInertia_IXX}" ixy="${reflect*0.000000017}" ixz="${reflect*0.000000013}"
+                    iyy="${IndexFingerPitch2LinkInertia_IYY}" iyz="${IndexFingerPitch2LinkInertia_IYZ}" izz="${IndexFingerPitch2LinkInertia_IZZ}"
+                    origin_rpy="0 0 0" 
+                    visual_mesh="${fingers_mesh_dir}/indexj2_${prefix}.dae"
+                    collision_mesh="${fingers_mesh_dir}/indexj2_${prefix}.dae"/>
+    <xacro:gazebo_hand_contact link_name="${prefix}IndexFingerPitch2Link" />
+
+    <xacro:standard_link name="${prefix}IndexFingerPitch3Link" 
+                    mass="${IndexFingerPitch3LinkMass}" 
+                    origin_xyz="0 ${reflect*0.01} 0"
+                    ixx="${IndexFingerPitch3LinkInertia_IXX}" ixy="${reflect*0.000000024}" ixz="${reflect*-0.000000000}"
+                    iyy="${IndexFingerPitch3LinkInertia_IYY}" iyz="${IndexFingerPitch3LinkInertia_IYZ}" izz="${IndexFingerPitch3LinkInertia_IZZ}"
+                    origin_rpy="0 0 0" 
+                    visual_mesh="${fingers_mesh_dir}/indexj3_${prefix}.dae"
+                    collision_mesh="${fingers_mesh_dir}/indexj3_${prefix}.dae"/>
+    <xacro:gazebo_hand_contact link_name="${prefix}IndexFingerPitch3Link" />
+
+    <xacro:revolute_joint_ex jointName="${prefix}${IndexFingerPitch1JointName}" 
+                          parent="${index_finger_root_link}" child="${prefix}IndexFingerPitch1Link"
+                          origin_xyz="${IndexFingerPitch1FrameOrigin_X} ${reflect * 0.0976} ${IndexFingerPitch1FrameOrigin_Z}" 
+                          origin_rpy="${reflect * 0.1745} ${IndexFingerPitch1FrameOrientation_Pitch} ${IndexFingerPitch1FrameOrientation_Yaw}"
+                          axis="${IndexFingerPitch1RotationAxis}" damping="0.5" friction="0.5">
+        <xacro:if value="${(reflect+1)/2}">
+          <limit effort="${IndexFingerPitch1TorqueLimit}" lower="${-reflect * IndexFingerPitch1PositionLimit_Upper}" upper="${-reflect * IndexFingerPitch1PositionLimit_Lower}" velocity="${IndexFingerPitch1VelocityLimit}"/>
+        </xacro:if>
+        <xacro:if value="${(-reflect+1)/2}">
+          <limit effort="${IndexFingerPitch1TorqueLimit}" lower="${IndexFingerPitch1PositionLimit_Lower}" upper="${IndexFingerPitch1PositionLimit_Upper}" velocity="${IndexFingerPitch1VelocityLimit}"/>
+        </xacro:if>
+        <controller_gains Kp="${IndexFingerPitch1Kp}" Kd="${IndexFingerPitch1Kd}" Ki="${IndexFingerPitch1Ki}"/>
+    </xacro:revolute_joint_ex>
+    
+    <xacro:revolute_joint_ex_mimic jointName="${prefix}${IndexFingerPitch2JointName}"
+                          parent="${prefix}IndexFingerPitch1Link" child="${prefix}IndexFingerPitch2Link"
+                          origin_xyz="${IndexFingerPitch2FrameOrigin_X} ${reflect * 0.0381} ${IndexFingerPitch2FrameOrigin_Z}" 
+                          origin_rpy="${IndexFingerPitch2FrameOrientation_Roll} ${IndexFingerPitch2FrameOrientation_Pitch} ${IndexFingerPitch2FrameOrientation_Yaw}"
+                          axis="${IndexFingerPitch2RotationAxis}" damping="0.5" friction="0.5">
+        <xacro:if value="${(reflect+1)/2}">
+          <limit effort="${IndexFingerPitch2TorqueLimit}" lower="${-reflect * IndexFingerPitch2PositionLimit_Upper}" upper="${-reflect * IndexFingerPitch2PositionLimit_Lower}" velocity="${IndexFingerPitch2VelocityLimit}"/>
+        </xacro:if>
+        <xacro:if value="${(-reflect+1)/2}">
+          <limit effort="${IndexFingerPitch2TorqueLimit}" lower="${IndexFingerPitch2PositionLimit_Lower}" upper="${IndexFingerPitch2PositionLimit_Upper}" velocity="${IndexFingerPitch2VelocityLimit}"/>
+        </xacro:if>
+        <controller_gains Kp="${IndexFingerPitch1Kp}" Kd="${IndexFingerPitch1Kd}" Ki="${IndexFingerPitch1Ki}"/>
+        <mimic joint="${prefix}${IndexFingerPitch1JointName}" multiplier="${Pulley2Ratio}" offset="0"/>
+    </xacro:revolute_joint_ex_mimic>
+
+    <xacro:revolute_joint_ex_mimic jointName="${prefix}${IndexFingerPitch3JointName}"
+                          parent="${prefix}IndexFingerPitch2Link" child="${prefix}IndexFingerPitch3Link"
+                          origin_xyz="${IndexFingerPitch3FrameOrigin_X} ${reflect * 0.0229} ${IndexFingerPitch3FrameOrigin_Z}" 
+                          origin_rpy="${IndexFingerPitch3FrameOrientation_Roll} ${IndexFingerPitch3FrameOrientation_Pitch} ${IndexFingerPitch3FrameOrientation_Yaw}"
+                          axis="${IndexFingerPitch3RotationAxis}" damping="0.5" friction="0.5">
+        <xacro:if value="${(reflect+1)/2}">
+          <limit effort="${IndexFingerPitch3TorqueLimit}" lower="${-reflect * IndexFingerPitch3PositionLimit_Upper}" upper="${-reflect * IndexFingerPitch3PositionLimit_Lower}" velocity="${IndexFingerPitch3VelocityLimit}"/>
+        </xacro:if>
+        <xacro:if value="${(-reflect+1)/2}">
+          <limit effort="${IndexFingerPitch3TorqueLimit}" lower="${IndexFingerPitch3PositionLimit_Lower}" upper="${IndexFingerPitch3PositionLimit_Upper}" velocity="${IndexFingerPitch3VelocityLimit}"/>
+        </xacro:if>
+        <controller_gains Kp="${IndexFingerPitch1Kp}" Kd="${IndexFingerPitch1Kd}" Ki="${IndexFingerPitch1Ki}"/>
+        <mimic joint="${prefix}${IndexFingerPitch1JointName}" multiplier="${Pulley3Ratio}" offset="0"/>
+    </xacro:revolute_joint_ex_mimic>
+  </xacro:macro>
+
+  <xacro:macro name="index_finger_transmissions_hw" params="prefix reflect">
+    <xacro:simple_forearm_position_transmission jointName="${prefix}${IndexFingerPitch1JointName}" actuatorName="${prefix}IndexPitch1Actuator" nodeName="/${prefix}${IndexFingerPitch1Node}" actuatorApi="${IndexFingerProximalApi}" reflect="${reflect}"/>
+    <xacro:simple_forearm_position_transmission jointName="${prefix}${IndexFingerPitch2JointName}" actuatorName="${prefix}IndexPitch2Actuator" nodeName="/${prefix}${IndexFingerPitch2Node}" actuatorApi="${IndexFingerMedialApi}" reflect="${reflect}"/>
+    <xacro:simple_forearm_position_transmission jointName="${prefix}${IndexFingerPitch3JointName}" actuatorName="${prefix}IndexPitch3Actuator" nodeName="/${prefix}${IndexFingerPitch3Node}" actuatorApi="${IndexFingerDistalApi}" reflect="${reflect}"/>
+  </xacro:macro>
+
+  <xacro:macro name="index_finger_transmissions_sim" params="prefix">
+    <xacro:simple_effort_transmission_with_three_child_joints jointName="${prefix}${IndexFingerPitch1ActuatorName}" actuatorName="${prefix}${IndexFingerPitch1ActuatorName}" nodeName="/${prefix}${IndexFingerNode}" actuatorApi="${SimApi}" child1JointName="${prefix}${IndexFingerPitch1JointName}" child1Ratio="${Pulley1Ratio}" child2JointName="${prefix}${IndexFingerPitch2JointName}" child2Ratio="${Pulley2Ratio}" child3JointName="${prefix}${IndexFingerPitch3JointName}" child3Ratio="${Pulley3Ratio}"/>
+    
+    <xacro:simple_passive_transmission jointName="${prefix}${IndexFingerPitch1JointName}" nodeName="/${prefix}${IndexFingerPitch1Node}" apiName="${SimApi}" reflect="1"/>
+    <xacro:simple_passive_transmission jointName="${prefix}${IndexFingerPitch2JointName}" nodeName="/${prefix}${IndexFingerPitch2Node}" apiName="${SimApi}" reflect="1"/>
+    <xacro:simple_passive_transmission jointName="${prefix}${IndexFingerPitch3JointName}" nodeName="/${prefix}${IndexFingerPitch3Node}" apiName="${SimApi}" reflect="1"/>
+  </xacro:macro>
+
+</robot>

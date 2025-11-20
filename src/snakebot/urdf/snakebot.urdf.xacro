@@ -1,0 +1,193 @@
+<?xml version="1.0"?>
+
+<robot name="snakebot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- *************************************************** -->
+  <!-- ******************* PARAMETERS ******************** -->
+  <!-- *************************************************** -->
+
+  <xacro:property name="PI" value="3.1415926535897931"/>
+
+  <xacro:property name="Hbase" value="0.1575"/>
+  <xacro:property name="Llink" value="0.2025"/>
+  <xacro:property name="Htip"  value="0.0450"/>
+
+  <material name="Grey">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.82 0.06 0.06 1.0"/>
+  </material>
+  <material name="Orange">
+    <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
+  </material>
+
+
+  <!-- *************************************************** -->
+  <!-- ******************** BASE MACRO ******************* -->
+  <!-- *************************************************** -->
+
+  <xacro:macro name="base" params="this color parent">
+
+    <joint name="attach-base" type="fixed">
+      <parent link="${parent}"/>
+      <child  link="link${this}b"/>
+    </joint>
+
+    <link name="link${this}b">
+      <visual>
+	<geometry>
+          <mesh filename="package://snakebot/meshes/base.stl"/>
+	</geometry>
+	<material name="${color}"/>
+      </visual>
+    </link>
+
+    <joint name="shift${this}" type="fixed">
+      <parent link="link${this}b"/>
+      <child  link="link${this}c"/>
+      <origin xyz="0 0 ${Hbase}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="link${this}c">
+    </link>
+
+  </xacro:macro>
+
+
+  <!-- *************************************************** -->
+  <!-- *************** PAIR OF JOINTS MACRO ************** -->
+  <!-- *************************************************** -->
+
+  <xacro:macro name="pair" params="this prev color rotate">
+
+    <joint name="joint${this}a" type="continuous">
+      <parent link="link${prev}c"/>
+      <child  link="link${this}a"/>
+      <origin xyz="0 0 0" rpy="0 0 ${rotate}"/>
+      <axis   xyz="0 0 1"/>
+    </joint>
+
+    <link name="link${this}a">
+      <inertial>
+	<origin xyz="0 -0.03 0.12" rpy="0 0 0"/>
+	<mass value="4"/>
+	<inertia ixx="0.1"  ixy="0"  ixz="0" iyy="0.09" iyz="0" izz="0.02" />
+      </inertial>
+    
+      <visual>
+	<origin xyz="0 0 0" rpy="0 0 0"/>
+	<geometry>
+          <mesh filename="package://snakebot/meshes/link.stl"/>
+	</geometry>
+	<material name="${color}"/>
+      </visual>
+    </link>
+
+    <joint name="joint${this}b" type="continuous">
+      <parent link="link${this}a"/>
+      <child  link="link${this}b"/>
+      <origin xyz="0 0 ${Llink}" rpy="0 0 0"/>
+      <axis   xyz="0 1 0"/>
+    </joint>
+
+    <link name="link${this}b">
+      <inertial>
+	<origin xyz="0 0.03 ${Llink-0.12}" rpy="${PI} 0 0"/>
+	<mass value="4"/>
+	<inertia ixx="0.1"  ixy="0"  ixz="0" iyy="0.09" iyz="0" izz="0.02" />
+      </inertial>
+
+      <visual>
+	<origin xyz="0 0 ${Llink}" rpy="${PI} 0 0"/>
+        <geometry>
+          <mesh filename="package://snakebot/meshes/link.stl"/>
+        </geometry>
+        <material name="${color}"/>
+      </visual>
+    </link>
+
+    <joint name="shift${this}" type="fixed">
+      <parent link="link${this}b"/>
+      <child  link="link${this}c"/>
+      <origin xyz="0 0 ${Llink}" rpy="0 0 0" />
+    </joint>
+
+    <link name="link${this}c">
+    </link>
+
+  </xacro:macro>
+
+
+  <!-- *************************************************** -->
+  <!-- ***************** TIP FLANGE MACRO **************** -->
+  <!-- *************************************************** -->
+
+  <xacro:macro name="tip" params="tip prev color">
+
+    <joint name="attach-mating-plate" type="fixed">
+      <parent link="link${prev}c"/>
+      <child  link="mating-plate"/>
+    </joint>
+
+    <link name="mating-plate">
+      <visual>
+	<geometry>
+	  <cylinder length="0.001" radius="0.086"/>
+	</geometry>
+	<material name="${color}"/>
+      </visual>
+    </link>
+
+    <joint name="attach-flange" type="fixed">
+      <parent link="mating-plate"/>
+      <child  link="flange"/>
+    </joint>
+
+    <link name="flange">
+      <inertial>
+	<origin xyz="0 0 0.02" rpy="0 0 0"/>
+	<mass value="${0.3 / 0.308 * 0.44}"/> <!--this is for the MFT Pneumatisch flange-->
+	<inertia ixx="0.01"  ixy="0"  ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+
+      <visual>
+	<geometry>
+	  <mesh filename="package://snakebot/meshes/flange.stl"/>
+	</geometry>
+	<material name="${color}"/>
+      </visual>
+    </link>
+  
+    <joint name="finalspin" type="continuous">
+      <parent link="flange"/>
+      <child  link="${tip}"/>
+      <origin xyz="0 0 ${Htip}" rpy="0 0 0"/>
+      <axis   xyz="0 0 1"/>
+    </joint>
+
+  </xacro:macro>
+
+
+  <!-- *************************************************** -->
+  <!-- ********************** ROBOT ********************** -->
+  <!-- *************************************************** -->
+
+  <link name="world"/>
+  
+  <xacro:base this="0"          color="Grey"   parent="world"/>
+
+  <xacro:pair this="1" prev="0" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="2" prev="1" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="3" prev="2" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="4" prev="3" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="5" prev="4" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="6" prev="5" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="7" prev="6" color="Orange" rotate="${PI}"/>
+  <xacro:pair this="8" prev="7" color="Orange" rotate="${PI}"/>
+
+  <xacro:tip           prev="8" color="Grey"   tip="tip"/>
+
+  <link name="tip"/>
+
+</robot>

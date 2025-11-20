@@ -1,0 +1,17 @@
+<CoeffData>
+  <Type id="turbodriver" />
+  <Processor id="rotary/turbo_bootloader.bin" />
+  <ScheduleFile id="turbo.yaml" />
+  <Coeffs>
+        <Coeff id="NumberOfPoles" value="14.0"/>
+        <Coeff id="EncoderCPR" value="2048.0"/>
+        <Coeff id="FluxLinkage" value="0.0000238"/>
+        <Coeff id="Inductance_DAxis" value="0.0009"/>
+        <Coeff id="Inductance_QAxis" value="0.00139"/>
+        <Coeff id="WindingResistance" value="0.5"/>
+        <Coeff id="CurrentSafeLimit" value="10.0"/>
+        <Coeff id="JointRadToLinear" value="3141.59"/>
+        <Coeff id="JointOutputAPS_CountsToRad" value="0.00076699038"/>
+        <Coeff id="MotorWindingType" value="0.0"/>
+    </Coeffs>
+</CoeffData>

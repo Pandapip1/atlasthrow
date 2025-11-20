@@ -1,0 +1,21 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="waist">
+
+  <xacro:macro name="make_torso" params="torso_root_link">
+    <xacro:standard_link name="torso"
+                    mass="${TorsoRollLinkMass}"
+                    ixx="${TorsoRollLinkInertia_IXX}" ixy="${TorsoRollLinkInertia_IXY}" ixz="${TorsoRollLinkInertia_IXZ}"
+                    iyy="${TorsoRollLinkInertia_IYY}" iyz="${TorsoRollLinkInertia_IYZ}" izz="${TorsoRollLinkInertia_IZZ}"
+                    origin_rpy="0 0 0"
+                    origin_xyz="${TorsoRollLinkComPosition}"
+                    visual_mesh="${waist_mesh_dir}/torso.dae"
+                    collision_mesh="${waist_mesh_dir}/torso.dae" />
+
+    <joint name="torso_joint" type="fixed">
+        <parent link="${torso_root_link}"/>
+        <child link="torso"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+  </xacro:macro>
+
+</robot>

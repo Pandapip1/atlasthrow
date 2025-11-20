@@ -1,0 +1,13 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="valkyrie">
+
+    <xacro:make_pelvis />
+    <xacro:make_waist waist_root_link="${Pelvis_Link_Name}" />
+    <xacro:make_head head_root_link="torso" />
+    <xacro:make_arm_mass_sims prefix="right" reflect="-1" arm_root_link="torso" />
+
+    <xacro:waist_transmissions_hw />
+    <xacro:arm_transmissions_no_hands prefix="right"/>
+    <xacro:neck_transmissions_hw />
+</robot>
+
+

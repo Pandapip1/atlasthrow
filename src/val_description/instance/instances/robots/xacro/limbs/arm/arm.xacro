@@ -1,0 +1,23 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+
+    <xacro:include filename="$(find val_description)/instance/instances/robots/xacro/mechanisms/mechanisms.xacro"/>
+    <xacro:include filename="$(find val_description)/common/xacro/joint_names/valkyrie_joint_names.xacro"/>
+
+    <xacro:macro name="arm" params="prefix reflect j1_serial_number j2_serial_number j3_serial_number j4_serial_number j5_serial_number forearm_serial_number" >
+    	<xacro:simple_mechanism name="${ShoulderPitchJointName}" serial_number="${j1_serial_number}" node="/trunk/${prefix}_arm_j1" calibration_angle="${ShoulderPitchCalibrationAngle}"/>
+
+    	<xacro:simple_mechanism name="${ShoulderRollJointName}" serial_number="${j2_serial_number}" node="/${prefix}${ShoulderRollNode}" calibration_angle="${reflect * -1.309}"/>
+
+    	<xacro:simple_mechanism name="${ShoulderYawJointName}" serial_number="${j3_serial_number}" node="/${prefix}${ShoulderYawNode}" calibration_angle="${ShoulderYawCalibrationAngle}"/>
+
+    	<xacro:simple_mechanism name="${ElbowPitchJointName}" serial_number="${j4_serial_number}" node="/${prefix}${ElbowPitchNode}" calibration_angle="${ElbowPitchCalibrationAngle}"/>
+
+    	<xacro:simple_mechanism name="${ForearmYawJointName}" serial_number="${j5_serial_number}" node="/${prefix}${ForearmYawNode}" calibration_angle="${ForearmYawCalibrationAngle}"/>
+
+    	<xacro:hand_mechanism mechanism_name="${prefix}Hand" serial_number="${forearm_serial_number}" index_node="/${prefix}${IndexNode}" middle_node="/${prefix}${MiddleNode}" pinky_node="/${prefix}${PinkyNode}" thumb_prox_node="/${prefix}${ThumbProxNode}" thumb_dist_node="/${prefix}${ThumbDistNode}" thumb_roll_node="/${prefix}${ThumbRollNode}" wrist_left_node="/${prefix}${WristLeftNode}" wrist_right_node="/${prefix}${WristRightNode}" />
+
+        <xacro:hand_sensor_mechanism name="${prefix}HandSensors" serial_number="${forearm_serial_number}_midas" node="/${prefix}${HandSensorNode}" />
+
+    </xacro:macro>
+
+</robot>

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="valkyrie_middle_finger_mechanical_info">
+  
+  <!-- Motor Pulley diameter = 0.0152m (approximately)-->
+  <!-- Pulley-1 diameter = 0.01707m -->
+  <!-- Pulley-2 diameter = 0.0127m -->
+  <!-- Pulley-3 diameter = 0.01016 -->
+  <xacro:property name="Pulley1Ratio" value="1.123" />
+  <xacro:property name="Pulley2Ratio" value="0.835" />
+  <xacro:property name="Pulley3Ratio" value="0.668" />
+  
+</robot>

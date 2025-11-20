@@ -1,0 +1,13 @@
+<CoeffData>
+  <Properties>
+    <CalibrationDate/>
+    <FileGenDate date="2013-10-25" time="21:34:25.477992"/>
+  </Properties>
+  <Coeffs>
+    <Coeff id="JointForceLimit_N" value="10.0"/>
+    <Coeff id="JointSafety_LowerLimit_m" value="-3.14159"/>
+    <Coeff id="JointSafety_UpperLimit_m" value="3.14159"/>
+    <Coeff id="JointMaxValue" value="1.0"/>
+    <Coeff id="JointMinValue" value="-1.0"/>
+  </Coeffs>
+</CoeffData>

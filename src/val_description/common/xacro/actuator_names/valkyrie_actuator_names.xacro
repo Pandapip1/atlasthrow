@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<robot name="valkyrie_joint_names" xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<xacro:property name="TorsoYawActuatorName" value="torsoYaw"/>
+	<xacro:property name="WaistLeftActuatorName" value="waistLeftActuator"/>
+	<xacro:property name="WaistRightActuatorName" value="waistRightActuator"/>
+	<xacro:property name="WaistPitchActuatorSimName" value="waistPitchActuator"/>
+	<xacro:property name="WaistRollActuatorSimName" value="waistRollActuator"/>
+	<xacro:property name="HipYawActuatorName" value="HipYaw"/>
+	<xacro:property name="HipRollActuatorName" value="HipRoll"/>
+	<xacro:property name="HipPitchActuatorName" value="HipPitch"/>
+	<xacro:property name="KneePitchActuatorName" value="KneePitch"/>
+	<xacro:property name="AnkleRightActuatorName" value="AnkleRightActuator"/>
+	<xacro:property name="AnkleLeftActuatorName" value="AnkleLeftActuator"/>
+	<xacro:property name="AnkleRollActuatorSimName" value="AnkleRollActuator"/>
+	<xacro:property name="AnklePitchActuatorSimName" value="AnklePitchActuator"/>
+	<xacro:property name="LowerNeckPitchActuatorName" value="lowerNeckPitch"/>
+	<xacro:property name="NeckYawActuatorName" value="neckYaw"/>
+	<xacro:property name="UpperNeckPitchActuatorName" value="upperNeckPitch"/>
+	<xacro:property name="ShoulderPitchActuatorName" value="ShoulderPitch"/>
+	<xacro:property name="ShoulderRollActuatorName" value="ShoulderRoll"/>
+	<xacro:property name="ShoulderYawActuatorName" value="ShoulderYaw"/>
+	<xacro:property name="ElbowPitchActuatorName" value="ElbowPitch"/>
+	<xacro:property name="ForearmYawActuatorName" value="ForearmYaw"/>
+	<xacro:property name="WristBottomActuatorName" value="WristBottomActuator"/>
+	<xacro:property name="WristTopActuatorName" value="WristTopActuator"/>
+	<xacro:property name="WristRightActuatorName" value="WristRightActuator"/>
+	<xacro:property name="WristLeftActuatorName" value="WristLeftActuator"/>
+	<xacro:property name="WristPitchActuatorSimName" value="WristPitchActuator"/>
+	<xacro:property name="WristRollActuatorSimName" value="WristRollActuator"/>
+	<xacro:property name="IndexFingerPitch1ActuatorName" value="IndexFingerMotorPitch1"/>
+	<xacro:property name="MiddleFingerPitch1ActuatorName" value="MiddleFingerMotorPitch1"/>
+	<xacro:property name="PinkyPitch1ActuatorName" value="PinkyMotorPitch1"/>
+	<xacro:property name="ThumbRollActuatorName" value="ThumbMotorRoll"/>
+	<xacro:property name="ThumbPitch1ActuatorName" value="ThumbMotorPitch1"/>
+	<xacro:property name="ThumbPitch2ActuatorName" value="ThumbMotorPitch2"/>
+</robot>
