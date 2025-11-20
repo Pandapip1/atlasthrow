@@ -1,0 +1,192 @@
+These are several robots, in particular their URDFs:
+====================================================
+
+TO TEST:
+========
+
+  ros2 launch robots viewurdf.launch.py urdf:=<FILENAME>
+
+where you should be in this directory.  If RVIZ complains that "Frame
+[world] does not exist", change the "Global Options -> Fixed Frame" to
+something known (it provides a pull-down menu).
+
+
+ROBOTS:
+=======
+
+Humanoids (multi-arm):
+----------------------
+
+  DOFS = (per arm/per hand, per leg,  in torso, in neck/head)
+  
+  Atlas            (7/0, 6, 3, 1) 30 DOF  https://github.com/osrf/drcsim.git
+  NASA's Valkyrie  (7/5, 6, 3, 3) 42 DOF  https://gitlab.com/nasa-jsc-robotics/val_description.git
+  Rethink's Baxter (7/0, 0, 0, 1) 15 DOF  https://github.com/RethinkRobotics/baxter_common.git
+         
+  Human Models    (8/0, 9, 12, 2) 48 DOF  https://github.com/robotology/human-gazebo.git
+         
+  Unitree G1      	                  https://github.com/unitreerobotics/unitree_ros.git
+    g1_23dof       (5/0, 6, 1, 0) 23 DOF
+    g1_29dof       (7/0, 6, 3, 0) 29 DOF
+    g1_dual_arm    (7/0, 0, 0, 0) 14 DOF
+  Unitree H1                              https://github.com/unitreerobotics/unitree_ros.git
+    h1             (4/0, 5, 1, 0) 19 DOF
+    h1_with_hand   (5/6, 5, 1, 0) 33 DOF
+
+
+Hands:
+------
+
+  Shadow Hand              24 DOF  https://github.com/shadow-robot/sr_common/tree/noetic-devel/sr_description
+
+
+Walking (multi-legged):
+-----------------------
+
+  Boston Dynamics's Spot   12 DOF  https://github.com/chvmp/spotmicro_description.git
+  MIT Cheetah              12 DOF  https://github.com/HitSZwang/mini-cheetah-gazebo-urdf.git
+
+  Spider: PhantomX (6leg)  18 DOF  https://github.com/HumaRobotics/phantomx_description.git
+
+  Spot (official)          12 DOF  https://github.com/bdaiinstitute/spot_ros2.git
+  Spot with Arm (+7DOF)    19 DOF  https://github.com/bdaiinstitute/spot_ros2.git
+
+  Unitree A1		   12 DOF  https://github.com/unitreerobotics/unitree_ros.git
+
+
+Mobile:
+-------
+
+  Youbot (6DOF KUKA on mobile)     https://github.com/mas-group/youbot_description.git
+  eDO (6DOF on mobile base)        https://github.com/Pro/eDO_description.git
+
+  Herb (CMU's mobile two-armed)    https://github.com/personalrobotics/herb_description.git
+
+
+Redundant and Research-Inspired Arms (7/8 DOF):
+-----------------------------------------------
+
+  Snakebot                 17 DOF  Hand-built from Kuka's iiwa components
+
+  Cyton                     8 DOF  https://github.com/GertKanter/cyton_gamma_1500_description.git
+  Kuka's iiwa               7 DOF  https://github.com/kuka-isir/iiwa_description.git
+
+  Barrett's WAM robot       7 DOF  https://github.com/jhu-lcsr/barrett_model.git
+
+  Franka's Panda            7 DOF  https://github.com/frankaemika/franka_ros.git
+  (also two arm demo       14 DOF)
+
+
+Industrial Arms (6 DOF):
+------------------------
+
+  PUMA 560 (classic)        6 DOF  https://github.com/nimasarli/puma560_description.git
+  Universal                 6 DOF  https://github.com/ros-industrial/universal_robot.git
+
+  KUKA                      6 DOF  https://github.com/ros-industrial/kuka_experimental.git
+  ABB                       6 DOF  https://github.com/ros-industrial/abb.git
+  Motoman                   6 DOF  https://github.com/ros-industrial/motoman.git
+  Fanuc                     6 DOF  https://github.com/ros-industrial/fanuc.git
+  Staubli                   6 DOF  https://github.com/ros-industrial/staubli.git
+
+
+Other:
+------
+
+  Stewart Platform         36 DOF  https://github.com/mlayek21/Stewart-Platform
+
+
+
+Latest Updates:
+===============
+
+11/17/25  Added the Unitree A1/G1/H1
+  1) Created new packages (--build_type ament_cmake)
+  2) Update package.xml (name/description)
+  3) Update CMakeLists.txt to include meshes/urdf folders
+  4) For G1 - updated URDFs to find meshes via package (not direct files).
+
+12/28/24  Added the Stewart platform:
+  1) Created a new 'stewart' package (--build_type ament_cmake)
+  2) Copy: LICENSE, StewartPlatformDocument.pdf, meshes, stewart.urdf
+  3) Update the CMakeLists.txt to include the meshes/urdf folders
+  4) Update URDF to find meshes via package (not direct files).
+
+
+ROS2 Updates:
+=============
+
+For each:
+  1) Create a new ROS2 package by the same name (--build_type ament_cmake)
+  2) Copy the mesh and urdf folders (or equiavlent)
+  3) Update the CMakeLists.txt to include the above folders
+  4) Link to the urdf for easy access.
+
+*) MIT Cheetah
+   - Removed references to Hector Sensors
+
+*) Boston Dynamics Spot
+   - Already ROS2 package
+   - Cleaned out ROS1 launch file and broken rviz config file
+   - xacro spot.urdf.xacro arm:=false > spot.urdf
+   - xacro spot.urdf.xacro arm:=true  > spot_with_arm.urdf
+
+
+ROS1 Changes (to get things to work):
+=====================================
+
+*) Atlas
+   - Pulled out the atlas_description package from other (unneeded) packages.
+   - Removed all but latest v5 version and necessary meshes/materials.
+   - Added a (missing) head link:
+       <link name="head">
+         <inertial>
+           <mass value="3.751" />
+           <origin xyz="-0.0481 0 0.0457" rpy="0 -0 0" />
+           <inertia ixx="0.0108" ixy="-0.0001" ixz="-0.0007"
+                    iyy="0.0182" iyz="-0.0003" izz="0.0108" />
+           </inertial>
+       </link>
+
+*) Herb:
+   - Replaced prefix "/left" with "left" and "/right" with "right" in
+     herb.urdf.xacro and fixed_transforms.urdf.xacro
+   - Rebuild:
+     $ xacro herb.urdf.xacro > herb.urdf
+
+*) Snakebot:
+   - Manually created from KUKA's iiwa
+   - Meshes:
+       base.stl   iiwa_description/meshes/iiwa14/collision/link_0.stl
+       link.stl   iiwa_description/meshes/iiwa14/collision/link_1.stl
+       flange.stl iiwa_description/meshes/iiwa14/collision/link_7.stl
+   - Build with xacro:
+     $ xacro snakebot.urdf.xacro > snakebot.urdf
+
+*) Franka
+   - Pulled out the franka_description package from other (unneeded) packages.
+
+
+To allow "catkin_make" of the workspace (compiling):
+
+*) Motoman:
+   - Removed the unneeded motoman_msgs and motoman_driver packages.
+
+*) Fanuc:
+   - Removed the unneeded fanuc_driver package.
+
+*) Universal Robot:
+   - Removed the unneeded ur_msgs and ur_driver packages.
+
+*) Baxter:
+   - Removed the unneeded baxter_core_msgs and baxter_maintenance_msgs packages.
+
+*) KUKA Experimental:
+   - Removed the unneeded kuka_eki_hw_interface package.
+
+*) Universal Robot:
+   - Removed the unneeded ur_kinematics package.
+
+*) Valkyrie:
+   - Cleaned out CMakeList.txt to stop auto-xacro-ing the urdf files.
+
