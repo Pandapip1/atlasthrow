@@ -146,9 +146,11 @@ class TrajectoryNode(Node):
         wr = wd + self.lam * eRlast
 
         # Compute the inverse kinematics.
+        gamma = 0.05
         J     = np.vstack((Jv, Jw))
         xrdot = np.concatenate((vr, wr))
-        qcdot = np.linalg.pinv(J) @ xrdot
+        Jpinv = J.T @ np.linalg.pinv(J @ J.T + gamma ** 2 * np.eye(6))
+        qcdot = Jpinv @ xrdot
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
