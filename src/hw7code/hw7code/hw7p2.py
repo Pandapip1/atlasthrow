@@ -47,9 +47,9 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
-        self.variation = "C"
+        self.variation = "D"
 
-        # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
+        # Define the list of joint nDmes MATCHING THE JOINT NAMES IN THE URDF!
         self.jointnames=['theta1','theta2','thetaX','theta3','theta4','theta5','theta6']
 
         # Set up the kinematic chain object.
@@ -74,7 +74,7 @@ class TrajectoryNode(Node):
         self.qc = self.q0.copy()
         self.ep = vzero()
         self.eR = vzero()
-        if self.variation == "A" or self.variation == "C":
+        if self.variation in ["A", "C", "D"]:
             self.ec = np.array([0.])
         elif self.variation == "B":
             self.ec = np.array([0.])
@@ -84,6 +84,7 @@ class TrajectoryNode(Node):
         # Pick the convergence bandwidth.
         self.lam = 20
         self.lam_secondary = 10
+        self.c = 0.2
 
         self.ranges = np.array([
             [-np.pi, np.pi / 2],
@@ -190,6 +191,8 @@ class TrajectoryNode(Node):
             cd = np.array([0.])
         elif self.variation == "B":
             cd = np.array([0.])
+        elif self.variation == "D":
+            cd = np.array([0.])
         else:
             raise Exception("oops wrong variation")
         
@@ -201,7 +204,7 @@ class TrajectoryNode(Node):
 
         # Compute the old forward kinematics to get the Jacobians.
         (_, _, Jv, Jw) = self.chain.fkin(qclast)
-        if self.variation == "A" or self.variation == "C":
+        if self.variation == "A" or self.variation == "C" or self.variation == "D":
             Jc = np.array([[
                 0., 0., 0., 0., 0., 0., 0.
             ]])
@@ -218,7 +221,7 @@ class TrajectoryNode(Node):
         cr = cd + self.lam * eclast
 
         # Compute the commanded gradient of our secondary
-        if self.variation == "A" or self.variation == "B":
+        if self.variation == "A" or self.variation == "B" or self.variation == "D":
             g = np.array([0., 0., 0., 0., 0., 0., 0.])
         elif self.variation == "C":
             g = (qclast - (self.ranges[:, 0] + self.ranges[:, 1]) * 0.5) / (self.ranges[:, 1] - self.ranges[:, 0])
@@ -231,6 +234,14 @@ class TrajectoryNode(Node):
         xrdot = np.concatenate((vr, wr, cr))
         N     = np.eye(qclast.size) - J_inv @ J
         qcdot = J_inv @ xrdot - self.lam_secondary * (N @ g)
+
+        if self.variation in ["A", "B", "C"]:
+            tau = np.zeros(7)
+        elif self.variation == "D":
+            tau = repulsion(qclast, self.elbowchain, self.wristchain) * self.c
+        else:
+            raise Exception("oops wrong variation")
+        qcdot += tau
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
