@@ -84,7 +84,7 @@ class TrajectoryNode(Node):
         # Pick the convergence bandwidth.
         self.lam = 20
         self.lam_secondary = 10
-        self.c = 0.2
+        self.c = 0.1 * (2 ** 4)
 
         self.ranges = np.array([
             [-np.pi, np.pi / 2],
