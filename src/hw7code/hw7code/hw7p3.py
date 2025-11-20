@@ -113,9 +113,9 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
-        if self.t > 8.0:
-            self.future.set_result("Trajectory has ended")
-            return
+        # if self.t > 8.0:
+        #     self.future.set_result("Trajectory has ended")
+        #     return
 
         ##############################################################
         # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
