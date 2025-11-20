@@ -32,6 +32,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hw7p1      = hw7code.hw7p1:main',
+            'hw7p1b     = hw7code.hw7p1b:main',
             'hw7p2      = hw7code.hw7p2:main',
             'hw7p3      = hw7code.hw7p3:main',
         ],
