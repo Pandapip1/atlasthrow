@@ -46,6 +46,7 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
+        self.variation = "A"
 
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
         self.jointnames=['theta1','theta2','thetaX','theta3','theta4','theta5','theta6']
@@ -70,6 +71,12 @@ class TrajectoryNode(Node):
         self.qc = self.q0.copy()
         self.ep = vzero()
         self.eR = vzero()
+        if self.variation == "A":
+            self.ec = np.array([0.])
+        elif self.variation == "B":
+            self.ec = np.array([0.])
+        else:
+            raise Exception("oops wrong variation")
 
         # Pick the convergence bandwidth.
         self.lam = 20
@@ -166,23 +173,40 @@ class TrajectoryNode(Node):
                 nleft = np.array([1, 1, -1]) / sqrt(3)
                 Rd    = Rotn(nleft, -alpha)
                 wd    = - nleft * alphadot
-
+        if self.variation == "A":
+            cd = np.array([0.])
+        elif self.variation == "B":
+            cd = np.array([0.])
+        else:
+            raise Exception("oops wrong variation")
         
         # Grab the last joint command position and task errors.
         qclast = self.qc
         eplast = self.ep
         eRlast = self.eR
+        eclast = self.ec
 
         # Compute the old forward kinematics to get the Jacobians.
         (_, _, Jv, Jw) = self.chain.fkin(qclast)
+        if self.variation == "A":
+            Jc = np.array([[
+                0., 0., 0., 0., 0., 0., 0.
+            ]], dtype=float)
+        elif self.variation == "B":
+            Jc = np.array([[
+                0.5, 0., 1., 0., 0., 0., 0.
+            ]])
+        else:
+            raise Exception("oops wrong variation")
 
         # Compute the reference velocities (with errors of last cycle).
         vr = vd + self.lam * eplast
         wr = wd + self.lam * eRlast
+        cr = cd + self.lam * eclast
 
         # Compute the inverse kinematics.
-        J     = np.vstack((Jv, Jw))
-        xrdot = np.concatenate((vr, wr))
+        J     = np.vstack((Jv, Jw, Jc))
+        xrdot = np.concatenate((vr, wr, cr))
         qcdot = np.linalg.pinv(J) @ xrdot
 
         # Integrate the joint position.
@@ -190,11 +214,13 @@ class TrajectoryNode(Node):
 
         # Compute the new forward kinematics for equivalent task commands.
         (pc, Rc, _, _) = self.chain.fkin(qc)
+        cc = Jc @ qc
 
         # Save the joint command position and task errors.
         self.qc = qc
         self.ep = ep(pd, pc)
         self.eR = eR(Rd, Rc)
+        self.ec = ep(cd, cc)
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
