@@ -34,7 +34,7 @@ def generate_launch_description():
     rvizcfg = os.path.join(pkgdir('utils'), 'rviz/viewurdfplus.rviz')
 
     # Locate the URDF file.
-    urdf = os.path.join(pkgdir('hw6code'), 'urdf/sixDOF_Obstacle.urdf')
+    urdf = os.path.join(pkgdir('atlas_description'), 'urdf/atlas_v5.urdf')
 
     # Load the robot's URDF file (XML).
     with open(urdf, 'r') as file:
@@ -64,9 +64,15 @@ def generate_launch_description():
     # Configure a node for the joint trajectory
     node_trajectory = Node(
         name       = 'trajectory', 
-        package    = 'hw7code',
-        executable = 'hw7p1',
+        package    = 'atlassquat',
+        executable = 'atlassquat',
         output     = 'screen')
+    # node_trajectory = Node(
+    #     name       = 'gui', 
+    #     package    = 'joint_state_publisher_gui',
+    #     executable = 'joint_state_publisher_gui',
+    #     output     = 'screen',
+    #     on_exit    = Shutdown())
 
 
     ######################################################################
