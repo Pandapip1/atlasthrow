@@ -52,10 +52,22 @@ class TrajectoryNode(Node):
         # INITIALIZE YOUR TRAJECTORY DATA!
 
         # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
-        self.jointnames=['theta1','theta2','theta3','theta4','theta5','theta6']
+        # Full list of joints
+        self.jointNames=[]
+        # Torso to left foot
+        self.jointnamesLeftFoot=['theta1','theta2','theta3','theta4','theta5','theta6']
+        # Torso to right foot
+        self.jointnamesRightFoot=['']
+        # Torso to head
+        self.jointnamesHead=['']
+        # Torso to Pelvis
+        self.jointnamesPelvis=['']
 
         # Set up the kinematic chain object.
-        self.chain = KinematicChain(self, 'world', 'tip', self.jointnames)
+        self.leftFootChain = KinematicChain(self, 'torso_u?', '', self.jointnamesLeftFoot)
+        self.rightFootChain = KinematicChain(self, 'torso_u?', '', self.jointnamesRightFoot)
+        self.headChain = KinematicChain(self, '', '', self.jointnamesHead)
+        self.pelvisChain = KinematicChain(self, '', '', self.jointnamesPelvis)
 
         # Define the matching initial joint/task positions.
         self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
@@ -64,11 +76,11 @@ class TrajectoryNode(Node):
         (self.p0, self.R0, _, _) = self.chain.fkin(self.q0)
 
         # Define the other points.
-        self.pleft  = np.array([ 0.3, 0.5, 0.15])
-        self.pright = np.array([-0.3, 0.5, 0.15])
-        self.Rleft  = Rotx(-np.pi/2) @ Roty(-np.pi/2)
-        self.Rleft  = Rotz( np.pi/2) @ Rotx(-np.pi/2)
-        self.Rright = Reye()
+        self.leftFootUp = np.array([., ., .])
+        self.leftFootDown = np.array([0.012, ])
+        self.rightFootUp = np.array([])
+        self.rightFootDown = np.array([])
+
 
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
@@ -78,6 +90,8 @@ class TrajectoryNode(Node):
         # Pick the convergence bandwidth.
         self.lam = 20
 
+        # Other constants
+        self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
 
         ##############################################################
         # Setup the logistics of the node:
@@ -109,6 +123,32 @@ class TrajectoryNode(Node):
         self.timer.destroy()
         self.destroy_node()
 
+    # FillJacobian - when given a jacobian with only certain joints, 
+    #                fill in the columns for other joints with 0 and return full Jacobian
+    def fillJacobian(self, JPartial, jointNamesPartial):
+        (m, _) = Jpartial.shape
+        ind = 0
+        J = np.zeros(m, 1)
+
+        for jointName in self.jointNames
+            if jointName in jointNamesPartial:
+                J = np.hstack((J, JPartial[:, ind]))
+                ind += 1
+            else: 
+                J = np.hstack((J, np.zeros(m, 1)))
+
+        J = J[:, 1:] 
+
+        return J
+
+    # GetPartialQ - when given a full q, return partial q with only the joints of interest
+    def getPartialQ(self, qPartial, jointNamesPartial):
+        q = np.array([])
+
+        for jointName in self.jointNames:
+
+
+        return q
 
     # Update - send a new joint command every time step.
     def update(self):
@@ -116,65 +156,57 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
-        ##############################################################
-        # COMPUTE THE TRAJECTORY AT THIS TIME INSTANCE.
-
-        # # Stop everything after 8s - makes the graphing nicer.
-        # if self.t > 8.0:
-        #     self.future.set_result("Trajectory has ended")
-        #     return
-
-        # Decide which phase we are in:
-        if self.t < 3.0:
-            # Approach movement:
-            (s0, s0dot) = goto(self.t, 3.0, 0.0, 1.0)
-
-            pd = self.p0 + (self.pright - self.p0) * s0
-            vd =           (self.pright - self.p0) * s0dot
-
-            Rd = Reye()
-            wd = np.zeros(3)
-
-        else:
-            # Cyclic (sinusoidal) movements, after the first 3s.
-            s    =            cos(pi/2.5 * (self.t-3))
-            sdot = - pi/2.5 * sin(pi/2.5 * (self.t-3))
-
-            # Use the path variables to compute the position trajectory.
-            pd = np.array([-0.3*s    , 0.5, 0.5-0.35*s**2  ])
-            vd = np.array([-0.3*sdot , 0.0,    -0.70*s*sdot])
-
-            # Choose one of the following methods to compute orientation.
-            if False:
-                alpha    = - pi/4 * (s-1)
-                alphadot = - pi/4 * sdot
-
-                Rd = Rotx(-alpha) @ Roty(-alpha)
-                wd = (- nx() - Rotx(-alpha) @ ny()) * alphadot
-
-            elif False:
-                alpha    = - pi/4 * (s-1)
-                alphadot = - pi/4 * sdot
-                
-                Rd = Rotz(alpha) @ Rotx(-alpha)
-                wd = (nz() - Rotz(alpha) @ nx()) * alphadot
-
-            else:
-                alpha    = - pi/3 * (s-1)
-                alphadot = - pi/3 * sdot
-
-                nleft = np.array([1, 1, -1]) / sqrt(3)
-                Rd    = Rotn(nleft, -alpha)
-                wd    = - nleft * alphadot
-
-        
         # Grab the last joint command position and task errors.
         qclast = self.qc
         eplast = self.ep
         eRlast = self.eR
 
-        # Compute the old forward kinematics to get the Jacobians.
-        (_, _, Jv, Jw) = self.chain.fkin(qclast)
+        # First task: keep velocity of "center of mass" 0
+        pdcom = np.array() # x, y position of current com
+        vdcom = np.zeros(2) # desired x, y velocity of com is 0
+
+        qclastHead = self.getPartialQ(qclast, self.jointnamesHead)
+        (_, _, JheadPartial, _) = self.headChain.fkin(qclastHead)
+        Jhead = self.fillJacobian(JheadPartial, self.jointnamesHead)
+
+        qclastPelvis = self.getPartialQ(qclast, self.jointnamesPelvis)
+        (_, _, JpelvisPartial, _) = self.pelvisChain.fkin(qclastPelvis)
+        Jpelvis = self.fillJacobian(JpelvisPartial, self.jointnamesPelvis)
+
+        Jcom = np.vstack((Jhead, Jpelvis)) # Jacobian for first task
+        Jcom = Jcom[:-1, :] # disregard z coordinate of "com"
+
+        # Second task: moving feet up and down
+        t1 = self.t % self.period
+        if t1 < self.period / 2:
+            # going up->down
+            (s, sdot) = goto(t1, self.period/2, 0.0, 1.0)
+
+            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
+            vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
+            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s
+            vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
+        else:
+            # going down->up
+            (s, sdot) = goto(t1, self.period/2, 0.0, 1.0)
+
+            pdLeftFoot = self.leftFootUp + (self.leftFootDown - self.leftFootUp) * s
+            vdLeftFoot = (self.leftFootDown - self.leftFootUp) * sdot
+            pdRightFoot = self.rightFootUp + (self.rightFootDown - self.rightFootUp) * s
+            vdRightFoot = (self.rightFootDown - self.rightFootUp) * sdot
+
+        pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
+        vdfeet = np.vstack((vdLeftFoot, pdRighFoot)) # target x, y, z velocities of left + right feet
+
+        qclastLeftFoot = self.getPartialQ(qclast, self.jointnamesLeftFoot)
+        (_, _, JleftFootPartial, _) = self.chain.fkin(qclastLeftFoot)
+        JleftFoot = self.fillJacobian(JleftFootPartial, self.jointnamesLeftFoot)
+
+        qclastRightFoot = self.getPartialQ(qclast, self.jointnamesRightFoot)
+        (_, _, JrightFootPartial, _) = self.chain.fkin(qclastRightFoot)
+        JrightFoot = self.fillJacobian(JrightFootPartial, self.jointnamesRightFoot)
+
+        Jfeet = np.vstack((JleftFoot, JrightFoot)) # Jacobian for second task
 
         # Compute the reference velocities (with errors of last cycle).
         vr = vd + self.lam * eplast
