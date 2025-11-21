@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<robot name="StickRobot">
+  
+  <!-- *************************************************** -->
+  <!-- ***************** Kinematic Chain ***************** -->
+  <!-- *************************************************** -->
+  <!-- <link name="..."> is really a frame!                -->
+  <!-- <joint name="..." type="fixed">      is a fixed shift.    -->
+  <!-- <joint name="..." type="continuous"> is a revolute joint. -->
+  <!-- <joint name="..." type="prismatic">  is a linear   joint. -->
+  <!-- Note the 'origin' tag in the joints defines the shift and
+       reorientation, i.e. the transform.  For moving joints, this
+       happens before the continuous joint rotates around 'axis'. -->
+
+  <link name="world">
+  </link>
+
+  <!-- First rotational joint -->
+  <joint name="theta1" type="continuous">
+    <parent link="world"/>
+    <child  link="frame1"/>
+    <axis   xyz="1 0 0"/>			<!-- rotate about x -->
+  </joint>
+
+  <link name="frame1">				<!-- 1m long cylinder -->
+    <visual>
+      <origin xyz="0 0.5 0" rpy="1.5708 0 0"/>	<!-- place/orient -->
+      <geometry>
+	<cylinder length="1.0" radius="0.03"/>	<!-- length along z axis -->
+      </geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+
+  <!-- Second rotational joint -->
+  <joint name="theta2" type="continuous">
+    <parent link="frame1"/>
+    <child  link="frame2"/>
+    <origin xyz="0 1 0" rpy="0 0 0"/>		<!-- shifted from first joint -->
+    <axis   xyz="1 0 0"/>			<!-- rotate about x -->
+  </joint>
+
+  <link name="frame2">				<!-- 1m long cylinder -->
+    <visual>
+      <origin xyz="0 0.5 0" rpy="1.5708 0 0"/>	<!-- place/orient -->
+      <geometry>
+	<cylinder length="1.0" radius="0.03"/>	<!-- length along z axis -->
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <!-- Fixed shift to tip -->
+  <joint name="tipshift" type="fixed">
+    <parent link="frame2"/>
+    <child  link="tip"/>
+    <origin xyz="0 1 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tip">				<!-- Frame with rod -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>		<!-- Center of sphere -->
+      <geometry>
+	<sphere radius="0.05" />		<!-- Size of sphere -->
+      </geometry>
+      <material name="orange"/>			<!-- Color -->
+    </visual>
+  </link>
+
+
+  <!-- *************************************************** -->
+  <!-- ****************** Named Colors ******************* -->
+  <!-- *************************************************** -->
+
+  <material name="white">    <color rgba="1.00 1.00 1.00 1"/>  </material>
+  <material name="gray">     <color rgba="0.60 0.60 0.60 1"/>  </material>
+  <material name="table">    <color rgba="0.85 0.77 0.77 1"/>  </material>
+  <material name="black">    <color rgba="0.00 0.00 0.00 1"/>  </material>
+
+  <material name="red">      <color rgba="1.00 0.00 0.00 1"/>  </material>
+  <material name="green">    <color rgba="0.00 1.00 0.00 1"/>  </material>
+  <material name="blue">     <color rgba="0.00 0.00 1.00 1"/>  </material>
+
+  <material name="cyan">     <color rgba="0.00 1.00 1.00 1"/>  </material>
+  <material name="magenta">  <color rgba="1.00 0.00 1.00 1"/>  </material>
+  <material name="yellow">   <color rgba="1.00 1.00 0.00 1"/>  </material>
+
+  <material name="orange">   <color rgba="1.00 0.65 0.00 1"/>  </material>
+
+
+  <!-- *************************************************** -->
+  <!-- *********** Additional Visual Elements ************ -->
+  <!-- *************************************************** -->
+
+  <!-- THESE ARE EXAMPLES... PLAY AS YOU LIKE -->
+
+</robot>

@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+
+<robot name="FourDOF">
+
+  <!-- *************************************************** -->
+  <!-- ***************** Kinematic Chain ***************** -->
+  <!-- *************************************************** -->
+  <!-- <link name="..."> is really a frame!                -->
+  <!-- <joint name="..." type="fixed">      is a fixed shift.    -->
+  <!-- <joint name="..." type="continuous"> is a revolute joint. -->
+  <!-- <joint name="..." type="prismatic">  is a linear   joint. -->
+  <!-- Note the 'origin' tag in the joints defines the shift and
+       reorientation, i.e. the transform.  For moving joints, this
+       happens before the continuous joint rotates around 'axis'. -->
+
+  <link name="world">
+  </link>
+
+  <!-- Shift 0 -->
+  <joint name="shift0" type="fixed">
+    <parent link="world"/>
+    <child  link="frame0prime"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="frame0prime">
+  </link>
+  
+  <!-- Joint 1 -->
+  <joint name="theta1" type="continuous">
+    <parent link="frame0prime"/>
+    <child  link="frame1"/>
+    <axis   xyz="0 0 1"/>
+  </joint>
+
+  <link name="frame1">
+  </link>
+
+  <!-- Shift 1 and Joint 2 in one step... -->
+  <joint name="theta2" type="continuous">
+    <parent link="frame1"/>
+    <child  link="frame2"/>
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="frame2">
+  </link>
+
+  <!-- and so forth -->
+
+  <!-- you probably want to end with tip -->
+  <joint name="attachtip" type="fixed">
+    <parent link="frame2"/>
+    <child  link="tip"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tip">
+  </link>
+
+
+  <!-- *************************************************** -->
+  <!-- ****************** Named Colors ******************* -->
+  <!-- *************************************************** -->
+
+  <material name="white">    <color rgba="1.00 1.00 1.00 1"/>  </material>
+  <material name="gray">     <color rgba="0.60 0.60 0.60 1"/>  </material>
+  <material name="table">    <color rgba="0.85 0.77 0.77 1"/>  </material>
+  <material name="black">    <color rgba="0.00 0.00 0.00 1"/>  </material>
+
+  <material name="red">      <color rgba="1.00 0.00 0.00 1"/>  </material>
+  <material name="green">    <color rgba="0.00 1.00 0.00 1"/>  </material>
+  <material name="blue">     <color rgba="0.00 0.00 1.00 1"/>  </material>
+
+  <material name="cyan">     <color rgba="0.00 1.00 1.00 1"/>  </material>
+  <material name="magenta">  <color rgba="1.00 0.00 1.00 1"/>  </material>
+  <material name="yellow">   <color rgba="1.00 1.00 0.00 1"/>  </material>
+
+  <material name="orange">   <color rgba="1.00 0.65 0.00 1"/>  </material>
+
+
+  <!-- *************************************************** -->
+  <!-- *********** Additional Visual Elements ************ -->
+  <!-- *************************************************** -->
+
+</robot>

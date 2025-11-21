@@ -1,0 +1,290 @@
+<?xml version="1.0"?>
+
+<robot name="FourDOF">
+
+  <!-- *************************************************** -->
+  <!-- ***************** Kinematic Chain ***************** -->
+  <!-- *************************************************** -->
+  <!-- <link name="..."> is really a frame!                -->
+  <!-- <joint name="..." type="fixed">      is a fixed shift.    -->
+  <!-- <joint name="..." type="continuous"> is a revolute joint. -->
+  <!-- <joint name="..." type="prismatic">  is a linear   joint. -->
+  <!-- Note the 'origin' tag in the joints defines the shift and
+       reorientation, i.e. the transform.  For moving joints, this
+       happens before the continuous joint rotates around 'axis'. -->
+
+  <link name="world">
+  </link>
+
+  <!-- Shift 0 -->
+  <joint name="shift0" type="fixed">
+    <parent link="world"/>
+    <child  link="frame0prime"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="frame0prime">
+  </link>
+  
+  <!-- Joint 1 -->
+  <joint name="theta1" type="continuous">
+    <parent link="frame0prime"/>
+    <child  link="frame1"/>
+    <axis   xyz="0 0 1"/>
+  </joint>
+
+  <link name="frame1">
+  </link>
+
+  <!-- Shift 1 and Joint 2 in one step... -->
+  <joint name="theta2" type="continuous">
+    <parent link="frame1"/>
+    <child  link="frame2"/>
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="frame2">
+  </link>
+
+  <!-- Shift 2 and Joint 3 in one step... -->
+  <joint name="theta3" type="continuous">
+    <parent link="frame2"/>
+    <child  link="frame3"/>
+    <origin xyz="0 0.4 0" rpy="0 0 0"/>
+    <axis   xyz="0 0 -1"/>
+  </joint>
+
+  <link name="frame3">
+  </link>
+
+  <!-- Shift 3 and Joint 4 in one step... -->
+  <joint name="theta4" type="continuous">
+    <parent link="frame3"/>
+    <child  link="frame4"/>
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <axis   xyz="0 1 0"/>
+  </joint>
+
+  <link name="frame4">
+  </link>
+
+  <!-- you probably want to end with tip -->
+  <joint name="attachtip" type="fixed">
+    <parent link="frame4"/>
+    <child  link="tip"/>
+    <origin xyz="0 0.4 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tip">
+  </link>
+
+
+  <!-- *************************************************** -->
+  <!-- ****************** Named Colors ******************* -->
+  <!-- *************************************************** -->
+
+  <material name="white">    <color rgba="1.00 1.00 1.00 1"/>  </material>
+  <material name="gray">     <color rgba="0.60 0.60 0.60 1"/>  </material>
+  <material name="table">    <color rgba="0.85 0.77 0.77 1"/>  </material>
+  <material name="black">    <color rgba="0.00 0.00 0.00 1"/>  </material>
+
+  <material name="red">      <color rgba="1.00 0.00 0.00 1"/>  </material>
+  <material name="green">    <color rgba="0.00 1.00 0.00 1"/>  </material>
+  <material name="blue">     <color rgba="0.00 0.00 1.00 1"/>  </material>
+
+  <material name="cyan">     <color rgba="0.00 1.00 1.00 1"/>  </material>
+  <material name="magenta">  <color rgba="1.00 0.00 1.00 1"/>  </material>
+  <material name="yellow">   <color rgba="1.00 1.00 0.00 1"/>  </material>
+
+  <material name="orange">   <color rgba="1.00 0.65 0.00 1"/>  </material>
+
+
+  <!-- *************************************************** -->
+  <!-- *********** Additional Visual Elements ************ -->
+  <!-- *************************************************** -->
+
+  <!-- *** Link 1 Bar - attached to link1 *** -->
+
+  <joint name="attach-frame1bar" type="fixed">
+    <parent link="frame1"/>
+    <child  link="frame1bar"/>
+  </joint>
+
+  <link name="frame1bar">
+    <visual>
+      <origin xyz="0 0 0.2" rpy="0 0 0"/>
+      <geometry>
+	      <cylinder length="0.4" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <!-- *** Theta 1 Sail - attached to link1 *** -->
+
+  <joint name="attach-link1sail" type="fixed">
+    <parent link="frame1"/>
+    <child  link="link1sail"/>
+  </joint>
+
+  <link name="link1sail">
+    <visual>
+      <origin xyz="0 0 0.2" rpy="0 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+
+  <!-- *** Link 2 Bar - attached to link2 *** -->
+
+  <joint name="attach-frame2bar" type="fixed">
+    <parent link="frame2"/>
+    <child  link="frame2bar"/>
+  </joint>
+
+  <link name="frame2bar">
+    <visual>
+      <origin xyz="0 0.2 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.4" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <!-- *** Theta 2 Sail - attached to link2 *** -->
+
+  <joint name="attach-link2sail" type="fixed">
+    <parent link="frame2"/>
+    <child  link="link2sail"/>
+  </joint>
+
+  <link name="link2sail">
+    <visual>
+      <origin xyz="0 0.2 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+
+  <!-- *** Link 3 Bar - attached to link3 *** -->
+
+  <joint name="attach-frame3bar" type="fixed">
+    <parent link="frame3"/>
+    <child  link="frame3bar"/>
+  </joint>
+
+  <link name="frame3bar">
+    <visual>
+      <origin xyz="0 0 -0.2" rpy="0 0 0"/>
+      <geometry>
+	      <cylinder length="0.4" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <!-- *** Theta 3 Sail - attached to link3 *** -->
+
+  <joint name="attach-link3sail" type="fixed">
+    <parent link="frame3"/>
+    <child  link="link3sail"/>
+  </joint>
+
+  <link name="link3sail">
+    <visual>
+      <origin xyz="0 0 -0.2" rpy="0 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+
+  <!-- *** Link 4 Bar - attached to link4 *** -->
+
+  <joint name="attach-frame4bar" type="fixed">
+    <parent link="frame4"/>
+    <child  link="frame4bar"/>
+  </joint>
+
+  <link name="frame4bar">
+    <visual>
+      <origin xyz="0 0.2 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.4" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <!-- *** Theta 4 Sail - attached to link2 *** -->
+
+  <joint name="attach-link4sail" type="fixed">
+    <parent link="frame4"/>
+    <child  link="link4sail"/>
+  </joint>
+
+  <link name="link4sail">
+    <visual>
+      <origin xyz="0 0.2 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="yellow"/>
+    </visual>
+  </link>
+
+  <!-- *** Tip - attached to tip *** -->
+
+  <joint name="attach-tiphand" type="fixed">
+    <parent link="tip"/>
+    <child  link="tiphand"/>
+  </joint>
+
+  <link name="tiphand">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="attach-tipleftfinger" type="fixed">
+    <parent link="tip"/>
+    <child  link="tipleftfinger"/>
+  </joint>
+
+  <link name="tipleftfinger">
+    <visual>
+      <origin xyz="0.05 0.05 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="attach-tiprightfinger" type="fixed">
+    <parent link="tip"/>
+    <child  link="tiprightfinger"/>
+  </joint>
+
+  <link name="tiprightfinger">
+    <visual>
+      <origin xyz="-0.05 0.05 0" rpy="1.5708 0 0"/>
+      <geometry>
+	      <cylinder length="0.1" radius="0.02"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+</robot>
