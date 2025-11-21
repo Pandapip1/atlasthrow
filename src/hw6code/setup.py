@@ -28,7 +28,11 @@ setup(
     maintainer_email='robot@todo.todo',
     description='The 133a HW6 Code',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    extras_require={
+        'test': [
+            'pytest',
+        ],
+    },
     entry_points={
         'console_scripts': [
             'hw6p3      = hw6code.hw6p3:main',

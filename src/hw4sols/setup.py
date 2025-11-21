@@ -27,7 +27,11 @@ setup(
     maintainer_email='robot@todo.todo',
     description='The 133a HW4 Solutions Code',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    extras_require={
+        'test': [
+            'pytest',
+        ],
+    },
     entry_points={
         'console_scripts': [
             'hw4p1sol   = hw4sols.hw4p1sol:main',

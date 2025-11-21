@@ -28,7 +28,11 @@ setup(
     maintainer_email='robot@todo.todo',
     description='The 133a Project Code Demos',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    extras_require={
+        'test': [
+            'pytest',
+        ],
+    },
     entry_points={
         'console_scripts': [
             'boolean_publisher  = demos.boolean_publisher:main',
