@@ -41,13 +41,6 @@ from hw5sols.KinematicChainSol  import KinematicChain
 #
 #   Arguments are the node name and a future object (to force a shutdown).
 #
-def eR6(Rd, R):
-        return 0.5 * (cross(R[0:6,0], Rd[0:6,0]) +
-                    cross(R[0:6,1], Rd[0:6,1]) +
-                    cross(R[0:6,2], Rd[0:6,2]) +
-                    cross(R[0:6,3], Rd[0:6,3]) +
-                    cross(R[0:6,4], Rd[0:6,4]) +
-                    cross(R[0:6,5], Rd[0:6,5]))
 class TrajectoryNode(Node):
     # Initialization.
     def __init__(self, name, future):
@@ -75,11 +68,18 @@ class TrajectoryNode(Node):
         # Define the matching initial joint/task positions.
         self.q0 = np.zeros(len(self.jointnames))
 
+        (pL0, RL0, _, _) = self.leftFootChain.fkin(self.q0)
+        (pR0, RR0, _, _) = self.rightFootChain.fkin(self.q0)
+
+        squat_height = 0.25
+
         # Define the other points.
-        self.leftFootUp = np.array([], dtype=float)
-        self.leftFootDown = np.array([], dtype=float)
-        self.rightFootUp = np.array([], dtype=float)
-        self.rightFootDown = np.array([], dtype=float)
+        self.leftFootUp = pL0.copy()
+        self.leftFootDown = pL0.copy()
+        self.leftFootDown[2] -= squat_height
+        self.rightFootUp = pR0.copy()
+        self.rightFootDown = pR0.copy()
+        self.rightFootDown[2] -= squat_height
 
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
@@ -160,7 +160,18 @@ class TrajectoryNode(Node):
             vdLeftFoot = (self.leftFootDown - self.leftFootUp) * sdot
             pdRightFoot = self.rightFootUp + (self.rightFootDown - self.rightFootUp) * s
             vdRightFoot = (self.rightFootDown - self.rightFootUp) * sdot
+        
+        RdL = Reye()
+        RdR = Reye()
+        pdfeet = np.concatenate((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
+        Rdfeet = np.vstack((RdL, RdR))
+        vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
+        wdfeet = np.concatenate((vzero(), vzero()))
 
+        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
+        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
+
+        """"
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
         vdfeet = np.vstack((vdLeftFoot, vdRightFoot)) # target x, y, z velocities of left + right feet
 
@@ -169,11 +180,12 @@ class TrajectoryNode(Node):
 
         (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
         (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
-
+        
         Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
         Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
         Jfeet = np.vstack((Jvfeet, Jwfeet)) # Jacobian for feet task
-
+        """"
+        Jfeet = np.vstack((JvleftFoot, JwleftFoot, JvrightFoot, JwRightFoot))
         # Compute the reference velocities (with errors of last cycle).
         vrfeet = vdfeet + self.lam * eplast
         wrfeet = wdfeet + self.lam * eRlast
@@ -187,13 +199,21 @@ class TrajectoryNode(Node):
 
         (pcleftFoot, RcleftFoot, _, _) = self.leftFootChain(qc)
         (pcrightFoot, RcrightFoot, _, _) = self.rightFootChain(qc)
+        epL = ep(pdLeftFoot, pcleftFoot)
+        epR = ep(pdRightFoot, pcrightFoot)
+        eRL = eR(RdL, RcleftFoot)
+        eRR = eR(RdR, RcrightFoot)
+
+        self.ep = np.concatenate((epL, epR))
+        self.eR = np.concatenate((eRL, eRR))
+        """
         pc = np.vstack((pcleftFoot, pcrightFoot))
         Rc = np.vstack((RcleftFoot, RcrightFoot))
-
+        """
         # Save the joint command position and task errors.
         self.qc = qc
-        self.ep = ep(pdfeet, pc)
-        self.eR = eR6(Rdfeet, Rc)
+        #self.ep = ep(pdfeet, pc)
+        #self.eR = eR6(Rdfeet, Rc)
 
 
         ##############################################################
