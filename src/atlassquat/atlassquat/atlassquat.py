@@ -30,7 +30,7 @@ from utils.TransformHelpers     import *
 from utils.TrajectoryUtils      import *
 
 # Grab the general fkin from HW5 P5.
-from hw5sols.KinematicChainSol  import KinematicChain
+from advkinematicchain.AdvancedKinematicChain import AdvancedKinematicChain
 
 #
 #   Trajectory Generator Node Class
@@ -57,19 +57,15 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
 
         # Set up the kinematic chain object.
-        self.leftFootChain = KinematicChain(self, self.centerLink, self.leftFootLink, order_urdf=True)
-        self.rightFootChain = KinematicChain(self, self.centerLink, self.rightFootLink, order_urdf=True)
-        self.leftHandChain = KinematicChain(self, self.centerLink, self.leftHandLink, order_urdf=True)
-        self.rightHandChain = KinematicChain(self, self.centerLink, self.rightHandLink, order_urdf=True)
+        self.chain = AdvancedKinematicChain(self)
 
-        self.jointnames = self.rightHandChain.jointnames
-        print(self.jointnames)
+        self.jointnames = self.chain.joint_names
 
         # Define the matching initial joint/task positions.
         self.q0 = np.zeros(len(self.jointnames))
 
-        (pL0, RL0, _, _) = self.leftFootChain.fkin(self.q0[10:16])
-        (pR0, RR0, _, _) = self.rightFootChain.fkin(self.q0[24:30])
+        (pL0, RL0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftFootLink)
+        (pR0, RR0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightFootLink)
 
         squat_height = 0.25
 
@@ -169,8 +165,8 @@ class TrajectoryNode(Node):
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
 
-        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast[10:16])
-        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast[24:30])
+        (_, _, JvleftFoot, JwleftFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.leftFootLink)
+        (_, _, JvrightFoot, JwRightFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.rightFootLink)
 
         """
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
@@ -198,8 +194,9 @@ class TrajectoryNode(Node):
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
 
-        (pcleftFoot, RcleftFoot, _, _) = self.leftFootChain.fkin(qc[10:16])
-        (pcrightFoot, RcrightFoot, _, _) = self.rightFootChain.fkin(qc[24:30])
+
+        (pcleftFoot, RcleftFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.leftFootLink)
+        (pcrightFoot, RcrightFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightFootLink)
         epL = ep(pdLeftFoot, pcleftFoot)
         epR = ep(pdRightFoot, pcrightFoot)
         eRL = eR(RdL, RcleftFoot)
