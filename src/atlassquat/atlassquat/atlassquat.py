@@ -171,7 +171,7 @@ class TrajectoryNode(Node):
         (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
         (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
 
-        """"
+        """
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
         vdfeet = np.vstack((vdLeftFoot, vdRightFoot)) # target x, y, z velocities of left + right feet
 
@@ -184,7 +184,7 @@ class TrajectoryNode(Node):
         Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
         Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
         Jfeet = np.vstack((Jvfeet, Jwfeet)) # Jacobian for feet task
-        """"
+        """
         Jfeet = np.vstack((JvleftFoot, JwleftFoot, JvrightFoot, JwRightFoot))
         # Compute the reference velocities (with errors of last cycle).
         vrfeet = vdfeet + self.lam * eplast
