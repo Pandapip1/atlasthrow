@@ -63,12 +63,13 @@ class TrajectoryNode(Node):
         self.rightHandChain = KinematicChain(self, self.centerLink, self.rightHandLink, order_urdf=True)
 
         self.jointnames = self.rightHandChain.jointnames
+        print(self.jointnames)
 
         # Define the matching initial joint/task positions.
         self.q0 = np.zeros(len(self.jointnames))
 
-        (pL0, RL0, _, _) = self.leftFootChain.fkin(self.q0)
-        (pR0, RR0, _, _) = self.rightFootChain.fkin(self.q0)
+        (pL0, RL0, _, _) = self.leftFootChain.fkin(self.q0[10:16])
+        (pR0, RR0, _, _) = self.rightFootChain.fkin(self.q0[24:30])
 
         squat_height = 0.25
 
@@ -167,8 +168,8 @@ class TrajectoryNode(Node):
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
 
-        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
-        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
+        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast[10:16])
+        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast[24:30])
 
         """
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
@@ -191,13 +192,13 @@ class TrajectoryNode(Node):
 
         # Compute the inverse kinematics.
         xrdotfeet = np.concatenate((vrfeet, wrfeet))
-        qcdot = np.linalg.inv(Jfeet) @ xrdotfeet
+        qcdot = np.linalg.pinv(Jfeet) @ xrdotfeet
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
 
-        (pcleftFoot, RcleftFoot, _, _) = self.leftFootChain(qc)
-        (pcrightFoot, RcrightFoot, _, _) = self.rightFootChain(qc)
+        (pcleftFoot, RcleftFoot, _, _) = self.leftFootChain.fkin(qc[10:16])
+        (pcrightFoot, RcrightFoot, _, _) = self.rightFootChain.fkin(qc[24:30])
         epL = ep(pdLeftFoot, pcleftFoot)
         epR = ep(pdRightFoot, pcrightFoot)
         eRL = eR(RdL, RcleftFoot)
