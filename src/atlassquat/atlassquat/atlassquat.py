@@ -128,14 +128,14 @@ class TrajectoryNode(Node):
         eplast = self.ep
         eRlast = self.eR
 
-        # First task: keep velocity of "center of mass" 0
-        pdcom = np.array() # x, y position of current com
-        vdcom = np.zeros(2) # desired x, y velocity of com is 0
+        # # First task: keep velocity of "center of mass" 0
+        # pdcom = np.array() # x, y position of current com
+        # vdcom = np.zeros(2) # desired x, y velocity of com is 0
 
-        (_, _, Jhead, _) = self.headChain.fkin(qclast)
+        # (_, _, Jhead, _) = self.headChain.fkin(qclast)
 
-        Jcom = Jhead / 2 # Jacobian for first task
-        Jcom = Jcom[:-1, :] # disregard z coordinate of "com"
+        # Jcom = Jhead / 2 # Jacobian for first task
+        # Jcom = Jcom[:-1, :] # disregard z coordinate of "com"
 
         # Second task: moving feet up and down
         t1 = self.t % self.period
@@ -159,19 +159,23 @@ class TrajectoryNode(Node):
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
         vdfeet = np.vstack((vdLeftFoot, pdRighFoot)) # target x, y, z velocities of left + right feet
 
-        (_, _, JleftFoot, _) = self.chain.fkin(qclast)
-        (_, _, JrightFoot, _) = self.chain.fkin(qclast)
+        Rdfeet = np.vstack((Reye(), Reye()))
+        wdfeet = np.vstack((vzero(), vzero()))
 
-        Jfeet = np.vstack((JleftFoot, JrightFoot)) # Jacobian for second task
+        (_, _, JvleftFoot, JwleftFoot) = self.chain.fkin(qclast)
+        (_, _, JvrightFoot, JwRightFoot) = self.chain.fkin(qclast)
+
+        Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
+        Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
+        Jfeet = np.vstack((Jvfeet, Jwfeet)) # Jacobian for feet task
 
         # Compute the reference velocities (with errors of last cycle).
-        vr = vd + self.lam * eplast
-        wr = wd + self.lam * eRlast
+        vrfeet = vdfeet + self.lam * eplast
+        wrfeet = wdfeet + self.lam * eRlast
 
         # Compute the inverse kinematics.
-        J     = np.vstack((Jv, Jw))
-        xrdot = np.concatenate((vr, wr))
-        qcdot = np.linalg.inv(J) @ xrdot
+        xrdotfeet = np.concatenate((vrfeet, wrfeet))
+        qcdot = np.linalg.inv(Jfeet) @ xrdotfeet
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
