@@ -53,8 +53,8 @@ class TrajectoryNode(Node):
         self.centerLink = "pelvis"
         self.leftFootLink = "l_foot"
         self.rightFootLink = "r_foot"
-        self.leftHandLink = "l_foot"
-        self.rightHandLink = "r_foot"
+        self.leftHandLink = "l_hand"
+        self.rightHandLink = "r_hand"
 
         # Set up the kinematic chain object.
         self.leftFootChain = KinematicChain(self, self.centerLink, self.leftFootLink, order_urdf=True)
