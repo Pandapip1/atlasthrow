@@ -154,12 +154,12 @@ class TrajectoryNode(Node):
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         else:
             # going down->up
-            (s, sdot) = goto(t1, self.period/2, 0.0, 1.0)
+            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1.0, 0.0)
 
-            pdLeftFoot = self.leftFootUp + (self.leftFootDown - self.leftFootUp) * s
-            vdLeftFoot = (self.leftFootDown - self.leftFootUp) * sdot
-            pdRightFoot = self.rightFootUp + (self.rightFootDown - self.rightFootUp) * s
-            vdRightFoot = (self.rightFootDown - self.rightFootUp) * sdot
+            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
+            vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
+            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s
+            vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         
         RdL = Reye()
         RdR = Reye()
@@ -236,7 +236,7 @@ class TrajectoryNode(Node):
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(Rdfeet,pdfeet)))
+            transform=Transform_from_Rp(RdL,pdLeftFoot)))
 
 
 #
