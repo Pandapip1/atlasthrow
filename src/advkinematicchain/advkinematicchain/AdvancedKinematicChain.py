@@ -200,7 +200,7 @@ class AdvancedKinematicChain():
         if final_link not in self.link_traversal[initial_link]:
             error(self.node, f"Could not find path to final link {final_link} from initial link {initial_link}")
         
-        chain = self.link_traversal[initial_link][final_link]
+        chain = reversed(self.link_traversal[initial_link][final_link])
 
         ### INITIALIZE ###
         # We will build up three lists.  For each DOF (non-fixed, active
@@ -217,17 +217,7 @@ class AdvancedKinematicChain():
         # We walk the chain, one URDF step at a time, adjusting T as we
         # go.  Each step could be a fixed or active URDF joint.
         for step in chain:
-            # Take action based on the joint type: Move the transform T
-            # up the kinematic chain (remaining w.r.t. the base frame).
             idx = self.joint_names.index(step.name)
-            T = T \
-                @ (step.Tshift if step.Tshift is not None else Teye()) \
-                @ (
-                    T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type is JointType.REVOLUTE else
-                    T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type is JointType.LINEAR else
-                    Teye() if sttep.joint_type is JointType.FIXED else
-                    error(self.node, f"Unknown joint type: {joint.joint_type}")
-                )
 
             # For active joints (our DOFs), store the type, positon (pi),
             # and axis (ni) info, w.r.t. the base frame.
@@ -236,6 +226,18 @@ class AdvancedKinematicChain():
                 p.append(p_from_T(T))
                 n.append(R_from_T(T) @ step.nlocal)
                 idxs.append(idx)
+
+            # Take action based on the joint type: Move the transform T
+            # up the kinematic chain (remaining w.r.t. the base frame).
+            step = step.getReverse()
+            T = T \
+                @ (step.Tshift if step.Tshift is not None else Teye()) \
+                @ (
+                    T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type is JointType.REVOLUTE else
+                    T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type is JointType.LINEAR else
+                    Teye() if step.joint_type is JointType.FIXED else
+                    error(self.node, f"Unknown joint type: {joint.joint_type}")
+                )
 
         # Collect the tip information.
         ptip = p_from_T(T)
@@ -250,11 +252,11 @@ class AdvancedKinematicChain():
             idx = idxs[i]
             # Fill in the appropriate Jacobian column based on the
             # type.  The Jacobian (like the data) is w.r.t. the base.
-            if type[i] is JointType.REVOLUTE:
+            if _type[i] is JointType.REVOLUTE:
                 # Revolute is a rotation:
                 Jv[:, idx] = cross(n[i], ptip - p[i])
                 Jw[:, idx] = n[i]
-            elif type[i] is JointType.LINEAR:
+            elif _type[i] is JointType.LINEAR:
                 # Linear is a translation:
                 Jv[:, idx] = n[i]
                 Jw[:, idx] = np.zeros(3)

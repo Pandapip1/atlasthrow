@@ -165,54 +165,30 @@ class TrajectoryNode(Node):
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
 
+        # Inverse kinematics
         (_, _, JvleftFoot, JwleftFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.leftFootLink)
         (_, _, JvrightFoot, JwRightFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.rightFootLink)
 
-        """
-        pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
-        vdfeet = np.vstack((vdLeftFoot, vdRightFoot)) # target x, y, z velocities of left + right feet
-
-        Rdfeet = np.vstack((Reye(), Reye()))
-        wdfeet = np.vstack((vzero(), vzero()))
-
-        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
-        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
-        
-        Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
-        Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
-        Jfeet = np.vstack((Jvfeet, Jwfeet)) # Jacobian for feet task
-        """
-        Jfeet = np.vstack((JvleftFoot, JvrightFoot, JwleftFoot, JwRightFoot))
         # Compute the reference velocities (with errors of last cycle).
-        vrfeet = vdfeet + self.lam * eplast
-        wrfeet = wdfeet + self.lam * eRlast
+        vr = vdfeet + self.lam * eplast
+        wr = wdfeet + self.lam * eRlast
 
         # Compute the inverse kinematics.
-        xrdotfeet = np.concatenate((vrfeet, wrfeet))
-        qcdot = np.linalg.pinv(Jfeet) @ xrdotfeet
+        J = np.vstack((JvleftFoot, JvrightFoot, JwleftFoot, JwRightFoot))
+        xrdot = np.concatenate((vdfeet, wdfeet))
+        qcdot = np.linalg.pinv(J) @ xrdot
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
 
+        # Compute the new forward kinematics for equivalent task commands.
+        (pcLeftFoot, RcLeftFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.leftFootLink)
+        (pcRightFoot, RcRightFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightFootLink)
 
-        (pcleftFoot, RcleftFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.leftFootLink)
-        (pcrightFoot, RcrightFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightFootLink)
-        epL = ep(pdLeftFoot, pcleftFoot)
-        epR = ep(pdRightFoot, pcrightFoot)
-        eRL = eR(RdL, RcleftFoot)
-        eRR = eR(RdR, RcrightFoot)
-
-        self.ep = np.concatenate((epL, epR))
-        self.eR = np.concatenate((eRL, eRR))
-        """
-        pc = np.vstack((pcleftFoot, pcrightFoot))
-        Rc = np.vstack((RcleftFoot, RcrightFoot))
-        """
         # Save the joint command position and task errors.
         self.qc = qc
-        #self.ep = ep(pdfeet, pc)
-        #self.eR = eR6(Rdfeet, Rc)
-
+        self.ep = ep(np.concat((pdLeftFoot, pdRightFoot)), np.concat((pcLeftFoot, pcRightFoot)))
+        self.eR = np.concat((eR(RdL, RcLeftFoot), eR(RdR, RcRightFoot)))
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
