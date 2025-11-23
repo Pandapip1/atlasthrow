@@ -209,7 +209,7 @@ class URDFStep():
 # Define the full kinematic chain
 class KinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, baseframe, tipframe, expectedjointnames=None):
+    def __init__(self, node, baseframe, tipframe, expectedjointnames=None, order_urdf=False):
         # Store the node (so we can properly report errors later).
         self.node = node
 
@@ -240,8 +240,10 @@ class KinematicChain():
             info(node, string)
 
         # Confirm the active joint names matches the expectation.
-        if expectedjointnames is not None:
-            jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
+        jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
+        self.jointnames = jointnames
+        self.order_urdf = order_urdf
+        if expectedjointnames is not None or (expectedjointnames is None and not order_urdf):
             if jointnames != list(expectedjointnames):
                 error(node, "Chain does not match the expected names: " +
                     str(expectedjointnames))
@@ -257,9 +259,10 @@ class KinematicChain():
         ### INITIALIZE ###
         # We will build up three lists.  For each DOF (non-fixed, active
         # step) collect the type, position (pi), axis (ni) w.r.t. the base.
-        type = []
-        p    = []
-        n    = []
+        _type = []
+        p     = []
+        n     = []
+        names = []
 
         # Initialize the T matrix to walk up the chain, w.r.t. the base frame!
         T = Teye()
@@ -285,9 +288,10 @@ class KinematicChain():
             # For active joints (our DOFs), store the type, positon (pi),
             # and axis (ni) info, w.r.t. the base frame.
             if step.type != JointType.FIXED:
-                type.append(step.type)
+                _type.append(step.type)
                 p.append(p_from_T(T))
                 n.append(R_from_T(T) @ step.nlocal)
+                names.append(step.name)
 
         # Collect the tip information.
         ptip = p_from_T(T)
@@ -295,19 +299,21 @@ class KinematicChain():
 
         ### PHASE 2: USE ABOVE INFOMATION TO BUILD THE JACOBIAN ###
         # Collect the Jacobian for each active joint.
-        Jv = np.zeros((3,self.dofs))
-        Jw = np.zeros((3,self.dofs))
+        J_len = len(self.jointnames) if self.order_urdf else self.dofs
+        Jv = np.zeros((3, J_len))
+        Jw = np.zeros((3, J_len))
         for i in range(self.dofs):
+            idx = self.jointnames.index(names[i]) if self.order_urdf else i
             # Fill in the appropriate Jacobian column based on the
             # type.  The Jacobian (like the data) is w.r.t. the base.
             if type[i] is JointType.REVOLUTE:
                 # Revolute is a rotation:
-                Jv[:,i] = cross(n[i], ptip - p[i])
-                Jw[:,i] = n[i]
+                Jv[:, idx] = cross(n[i], ptip - p[i])
+                Jw[:, idx] = n[i]
             elif type[i] is JointType.LINEAR:
                 # Linear is a translation:
-                Jv[:,i] = n[i]
-                Jw[:,i] = np.zeros(3)
+                Jv[:, idx] = n[i]
+                Jw[:, idx] = np.zeros(3)
 
         # Return the info
         return (ptip, Rtip, Jv, Jw)

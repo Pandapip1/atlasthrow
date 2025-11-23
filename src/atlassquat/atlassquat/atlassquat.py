@@ -57,10 +57,11 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_foot"
 
         # Set up the kinematic chain object.
-        self.leftFootChain = KinematicChain(self, self.centerLink, self.leftFootLink)
-        self.rightFootChain = KinematicChain(self, self.centerLink, self.rightFootLink)
-        self.headChain = KinematicChain(self, self.centerLink, self.leftHandLink)
-        self.pelvisChain = KinematicChain(self, self.centerLink, self.rightHandLink)
+        self.leftFootChain = KinematicChain(self, self.centerLink, self.leftFootLink, order_urdf=True)
+        self.rightFootChain = KinematicChain(self, self.centerLink, self.rightFootLink, order_urdf=True)
+        self.leftHandChain = KinematicChain(self, self.centerLink, self.leftHandLink, order_urdf=True)
+        self.rightHandChain = KinematicChain(self, self.centerLink, self.rightHandLink, order_urdf=True)
+        print(f"Joint names: {self.rightHandChain.jointnames}")
 
         # Define the matching initial joint/task positions.
         self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
