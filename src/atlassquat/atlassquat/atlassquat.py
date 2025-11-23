@@ -187,6 +187,11 @@ class TrajectoryNode(Node):
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
 
+        (pcleftFoot, RcleftFoot, _, _) = self.leftFootChain(qc)
+        (pcrightFoot, RcrightFoot, _, _) = self.rightFootChain(qc)
+        pc = np.vstack((pcleftFoot, pcrightFoot))
+        Rc = np.vstack((RcleftFoot, RcrightFoot))
+
         # Save the joint command position and task errors.
         self.qc = qc
         self.ep = ep(pdfeet, pc)
