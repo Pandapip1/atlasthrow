@@ -186,7 +186,7 @@ class TrajectoryNode(Node):
         Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
         Jfeet = np.vstack((Jvfeet, Jwfeet)) # Jacobian for feet task
         """
-        Jfeet = np.vstack((JvleftFoot, JwleftFoot, JvrightFoot, JwRightFoot))
+        Jfeet = np.vstack((JvleftFoot, JvrightFoot, JwleftFoot, JwRightFoot))
         # Compute the reference velocities (with errors of last cycle).
         vrfeet = vdfeet + self.lam * eplast
         wrfeet = wdfeet + self.lam * eRlast
