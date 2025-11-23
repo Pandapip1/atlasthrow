@@ -75,11 +75,12 @@ class TrajectoryNode(Node):
 
         # Define the other points.
         self.leftFootUp = pL0.copy()
+        self.leftFootUp[2] += squat_height
         self.leftFootDown = pL0.copy()
-        self.leftFootDown[2] -= squat_height
+        
         self.rightFootUp = pR0.copy()
+        self.rightFootUp[2] += squat_height
         self.rightFootDown = pR0.copy()
-        self.rightFootDown[2] -= squat_height
 
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
