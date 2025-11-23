@@ -70,11 +70,10 @@ class TrajectoryNode(Node):
         self.rightHandChain = KinematicChain(self, self.centerLink, self.rightHandLink, order_urdf=True)
         print(f"Joint names: {self.rightHandChain.jointnames}")
 
+        self.jointnames = self.rightHandChain.jointnames
+
         # Define the matching initial joint/task positions.
-        self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))
-        #self.p0 = np.array([0.0, 0.55, 1.0])
-        #self.R0 = Reye()
-        (self.p0, self.R0, _, _) = self.chain.fkin(self.q0)
+        self.q0 = np.zeros(len(self.jointnames))
 
         # Define the other points.
         self.leftFootUp = np.array([], dtype=float)
@@ -82,11 +81,10 @@ class TrajectoryNode(Node):
         self.rightFootUp = np.array([], dtype=float)
         self.rightFootDown = np.array([], dtype=float)
 
-
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
-        self.ep = vzero()
-        self.eR = vzero()
+        self.ep = np.zeros(6)
+        self.eR = np.zeros(6)
 
         # Pick the convergence bandwidth.
         self.lam = 20
@@ -164,13 +162,13 @@ class TrajectoryNode(Node):
             vdRightFoot = (self.rightFootDown - self.rightFootUp) * sdot
 
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
-        vdfeet = np.vstack((vdLeftFoot, pdRighFoot)) # target x, y, z velocities of left + right feet
+        vdfeet = np.vstack((vdLeftFoot, vdRightFoot)) # target x, y, z velocities of left + right feet
 
         Rdfeet = np.vstack((Reye(), Reye()))
         wdfeet = np.vstack((vzero(), vzero()))
 
-        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChainchain.fkin(qclast)
-        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChainchain.fkin(qclast)
+        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChain.fkin(qclast)
+        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChain.fkin(qclast)
 
         Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
         Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
