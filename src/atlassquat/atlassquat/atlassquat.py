@@ -187,8 +187,8 @@ class TrajectoryNode(Node):
 
         # Save the joint command position and task errors.
         self.qc = qc
-        self.ep = ep(np.concat((pdLeftFoot, pdRightFoot)), np.concat((pcLeftFoot, pcRightFoot)))
-        self.eR = np.concat((eR(RdL, RcLeftFoot), eR(RdR, RcRightFoot)))
+        self.ep = ep(np.concatenate((pdLeftFoot, pdRightFoot)), np.concatenate((pcLeftFoot, pcRightFoot)))
+        self.eR = np.concatenate((eR(RdL, RcLeftFoot), eR(RdR, RcRightFoot)))
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
