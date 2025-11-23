@@ -162,8 +162,8 @@ class TrajectoryNode(Node):
         Rdfeet = np.vstack((Reye(), Reye()))
         wdfeet = np.vstack((vzero(), vzero()))
 
-        (_, _, JvleftFoot, JwleftFoot) = self.chain.fkin(qclast)
-        (_, _, JvrightFoot, JwRightFoot) = self.chain.fkin(qclast)
+        (_, _, JvleftFoot, JwleftFoot) = self.leftFootChainchain.fkin(qclast)
+        (_, _, JvrightFoot, JwRightFoot) = self.rightFootChainchain.fkin(qclast)
 
         Jvfeet = np.vstack((JvleftFoot, JvrightFoot)) 
         Jwfeet = np.vstack((JwleftFoot, JwRightFoot)) 
@@ -179,9 +179,6 @@ class TrajectoryNode(Node):
 
         # Integrate the joint position.
         qc = qclast + self.dt * qcdot
-
-        # Compute the new forward kinematics for equivalent task commands.
-        (pc, Rc, _, _) = self.chain.fkin(qc)
 
         # Save the joint command position and task errors.
         self.qc = qc
@@ -202,14 +199,14 @@ class TrajectoryNode(Node):
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(Rd,pd)))
+            pose=Pose_from_Rp(Rdfeet,pdfeet)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vd,wd)))
+            twist=Twist_from_vw(vdfeet,wdfeet)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(Rd,pd)))
+            transform=Transform_from_Rp(Rdfeet,pdfeet)))
 
 
 #
