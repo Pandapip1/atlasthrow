@@ -151,8 +151,8 @@ def parse_HTML(node, html, baseframe, tipframe):
         chain.insert(0, URDFStep(
             name=joint.name, type=type, Tshift=Tshift, nlocal=nlocal))
 
-    # Return the chain.
-    return chain
+    # Return the chain, and joint names
+    return chain, [joint.name for joint in robot.joints if joint.type != JointType.FIXED]
 
 
 ######################################################################
@@ -217,7 +217,7 @@ class KinematicChain():
         html = read_HTML(node)
 
         # Parse the HTML to find the kinematic chain steps.
-        self.chain = parse_HTML(node, html, baseframe, tipframe)
+        self.chain, all_jointnames = parse_HTML(node, html, baseframe, tipframe)
         self.steps = len(self.chain)
 
         # Set/count the active DOF numbers, walking up the chain.
@@ -240,13 +240,15 @@ class KinematicChain():
             info(node, string)
 
         # Confirm the active joint names matches the expectation.
-        jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
-        self.jointnames = jointnames
         self.order_urdf = order_urdf
-        if expectedjointnames is not None or (expectedjointnames is None and not order_urdf):
+        if expectedjointnames is not None or not order_urdf:
+            jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
             if jointnames != list(expectedjointnames):
                 error(node, "Chain does not match the expected names: " +
                     str(expectedjointnames))
+            self.jointnames = jointnames
+        else:
+            self.jointnames = all_jointnames
 
 
     # Compute the forward kinematics!
