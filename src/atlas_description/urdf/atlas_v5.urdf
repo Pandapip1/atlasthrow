@@ -1,5 +1,11 @@
 <?xml version="1.0" ?>
 <robot name="drc_skeleton">
+  <link name="world"></link>
+  <joint name="fix_pelvis_to_world">
+    <parent link="world"/>
+    <child link="pelvis"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
     <link name="head">
         <inertial>
             <mass value="3.751" />
