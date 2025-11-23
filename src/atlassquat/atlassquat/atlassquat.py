@@ -117,33 +117,6 @@ class TrajectoryNode(Node):
         self.timer.destroy()
         self.destroy_node()
 
-    # FillJacobian - when given a jacobian with only certain joints, 
-    #                fill in the columns for other joints with 0 and return full Jacobian
-    def fillJacobian(self, JPartial, jointNamesPartial):
-        (m, _) = Jpartial.shape
-        ind = 0
-        J = np.zeros(m, 1)
-
-        for jointName in self.jointNames
-            if jointName in jointNamesPartial:
-                J = np.hstack((J, JPartial[:, ind]))
-                ind += 1
-            else: 
-                J = np.hstack((J, np.zeros(m, 1)))
-
-        J = J[:, 1:] 
-
-        return J
-
-    # GetPartialQ - when given a full q, return partial q with only the joints of interest
-    def getPartialQ(self, qPartial, jointNamesPartial):
-        q = np.array([])
-
-        for jointName in self.jointNames:
-
-
-        return q
-
     # Update - send a new joint command every time step.
     def update(self):
         # Increment time.  We do so explicitly to avoid system jitter.
