@@ -50,7 +50,7 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
-        self.centerLink = "utorso"
+        self.centerLink = "pelvis"
         self.leftFootLink = "l_foot"
         self.rightFootLink = "r_foot"
         self.leftHandLink = "l_foot"
