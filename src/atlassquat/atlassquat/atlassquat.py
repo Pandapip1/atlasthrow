@@ -70,10 +70,10 @@ class TrajectoryNode(Node):
         (self.p0, self.R0, _, _) = self.chain.fkin(self.q0)
 
         # Define the other points.
-        self.leftFootUp = np.array([., ., .])
-        self.leftFootDown = np.array([0.012, ])
-        self.rightFootUp = np.array([])
-        self.rightFootDown = np.array([])
+        self.leftFootUp = np.array([], dtype=float)
+        self.leftFootDown = np.array([], dtype=float)
+        self.rightFootUp = np.array([], dtype=float)
+        self.rightFootDown = np.array([], dtype=float)
 
 
         # Initialize the stored joint command position and task errors.
