@@ -61,7 +61,6 @@ class TrajectoryNode(Node):
         self.rightFootChain = KinematicChain(self, self.centerLink, self.rightFootLink, order_urdf=True)
         self.leftHandChain = KinematicChain(self, self.centerLink, self.leftHandLink, order_urdf=True)
         self.rightHandChain = KinematicChain(self, self.centerLink, self.rightHandLink, order_urdf=True)
-        print(f"Joint names: {self.rightHandChain.jointnames}")
 
         self.jointnames = self.rightHandChain.jointnames
 
