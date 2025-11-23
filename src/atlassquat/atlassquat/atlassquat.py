@@ -41,6 +41,13 @@ from hw5sols.KinematicChainSol  import KinematicChain
 #
 #   Arguments are the node name and a future object (to force a shutdown).
 #
+def eR6(Rd, R):
+        return 0.5 * (cross(R[0:6,0], Rd[0:6,0]) +
+                    cross(R[0:6,1], Rd[0:6,1]) +
+                    cross(R[0:6,2], Rd[0:6,2]) +
+                    cross(R[0:6,3], Rd[0:6,3]) +
+                    cross(R[0:6,4], Rd[0:6,4]) +
+                    cross(R[0:6,5], Rd[0:6,5]))
 class TrajectoryNode(Node):
     # Initialization.
     def __init__(self, name, future):
@@ -182,8 +189,8 @@ class TrajectoryNode(Node):
 
         # Save the joint command position and task errors.
         self.qc = qc
-        self.ep = ep(pd, pc)
-        self.eR = eR(Rd, Rc)
+        self.ep = ep(pdfeet, pc)
+        self.eR = eR6(Rdfeet, Rc)
 
 
         ##############################################################
