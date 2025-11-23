@@ -132,15 +132,9 @@ class TrajectoryNode(Node):
         pdcom = np.array() # x, y position of current com
         vdcom = np.zeros(2) # desired x, y velocity of com is 0
 
-        qclastHead = self.getPartialQ(qclast, self.jointnamesHead)
-        (_, _, JheadPartial, _) = self.headChain.fkin(qclastHead)
-        Jhead = self.fillJacobian(JheadPartial, self.jointnamesHead)
+        (_, _, Jhead, _) = self.headChain.fkin(qclast)
 
-        qclastPelvis = self.getPartialQ(qclast, self.jointnamesPelvis)
-        (_, _, JpelvisPartial, _) = self.pelvisChain.fkin(qclastPelvis)
-        Jpelvis = self.fillJacobian(JpelvisPartial, self.jointnamesPelvis)
-
-        Jcom = np.vstack((Jhead, Jpelvis)) # Jacobian for first task
+        Jcom = Jhead / 2 # Jacobian for first task
         Jcom = Jcom[:-1, :] # disregard z coordinate of "com"
 
         # Second task: moving feet up and down
@@ -165,13 +159,8 @@ class TrajectoryNode(Node):
         pdfeet = np.vstack((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
         vdfeet = np.vstack((vdLeftFoot, pdRighFoot)) # target x, y, z velocities of left + right feet
 
-        qclastLeftFoot = self.getPartialQ(qclast, self.jointnamesLeftFoot)
-        (_, _, JleftFootPartial, _) = self.chain.fkin(qclastLeftFoot)
-        JleftFoot = self.fillJacobian(JleftFootPartial, self.jointnamesLeftFoot)
-
-        qclastRightFoot = self.getPartialQ(qclast, self.jointnamesRightFoot)
-        (_, _, JrightFootPartial, _) = self.chain.fkin(qclastRightFoot)
-        JrightFoot = self.fillJacobian(JrightFootPartial, self.jointnamesRightFoot)
+        (_, _, JleftFoot, _) = self.chain.fkin(qclast)
+        (_, _, JrightFoot, _) = self.chain.fkin(qclast)
 
         Jfeet = np.vstack((JleftFoot, JrightFoot)) # Jacobian for second task
 
