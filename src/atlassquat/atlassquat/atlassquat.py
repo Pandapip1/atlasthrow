@@ -50,24 +50,17 @@ class TrajectoryNode(Node):
 
         ##############################################################
         # INITIALIZE YOUR TRAJECTORY DATA!
-
-        # Define the list of joint names MATCHING THE JOINT NAMES IN THE URDF!
-        # Full list of joints
-        self.jointNames=[]
-        # Torso to left foot
-        self.jointnamesLeftFoot=['theta1','theta2','theta3','theta4','theta5','theta6']
-        # Torso to right foot
-        self.jointnamesRightFoot=['']
-        # Torso to head
-        self.jointnamesHead=['']
-        # Torso to Pelvis
-        self.jointnamesPelvis=['']
+        self.centerLink = "utorso"
+        self.leftFootLink = "l_foot"
+        self.rightFootLink = "r_foot"
+        self.leftHandLink = "l_foot"
+        self.rightHandLink = "r_foot"
 
         # Set up the kinematic chain object.
-        self.leftFootChain = KinematicChain(self, 'torso_u?', '', self.jointnamesLeftFoot)
-        self.rightFootChain = KinematicChain(self, 'torso_u?', '', self.jointnamesRightFoot)
-        self.headChain = KinematicChain(self, '', '', self.jointnamesHead)
-        self.pelvisChain = KinematicChain(self, '', '', self.jointnamesPelvis)
+        self.leftFootChain = KinematicChain(self, self.centerLink, self.leftFootLink)
+        self.rightFootChain = KinematicChain(self, self.centerLink, self.rightFootLink)
+        self.headChain = KinematicChain(self, self.centerLink, self.leftHandLink)
+        self.pelvisChain = KinematicChain(self, self.centerLink, self.rightHandLink)
 
         # Define the matching initial joint/task positions.
         self.q0 = np.radians(np.array([0, 90, -90, 0, 0, 0]))

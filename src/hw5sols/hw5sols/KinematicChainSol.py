@@ -209,7 +209,7 @@ class URDFStep():
 # Define the full kinematic chain
 class KinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, baseframe, tipframe, expectedjointnames):
+    def __init__(self, node, baseframe, tipframe, expectedjointnames=None):
         # Store the node (so we can properly report errors later).
         self.node = node
 
@@ -240,10 +240,11 @@ class KinematicChain():
             info(node, string)
 
         # Confirm the active joint names matches the expectation.
-        jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
-        if jointnames != list(expectedjointnames):
-            error(node, "Chain does not match the expected names: " +
-                  str(expectedjointnames))
+        if expectedjointnames is not None:
+            jointnames = [s.name for s in self.chain if s.type != JointType.FIXED]
+            if jointnames != list(expectedjointnames):
+                error(node, "Chain does not match the expected names: " +
+                    str(expectedjointnames))
 
 
     # Compute the forward kinematics!
