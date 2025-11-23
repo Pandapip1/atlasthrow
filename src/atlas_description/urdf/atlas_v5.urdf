@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot name="drc_skeleton">
   <link name="world"></link>
-  <joint name="fix_pelvis_to_world">
+  <joint name="fix_pelvis_to_world" type="fixed">
     <parent link="world"/>
     <child link="pelvis"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
