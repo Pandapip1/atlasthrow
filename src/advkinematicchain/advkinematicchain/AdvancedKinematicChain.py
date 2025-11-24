@@ -307,14 +307,6 @@ class AdvancedKinematicChain():
             except ValueError:
                 error(self.node, f"{step.name} somehow not in chain?!")
 
-            # For active joints (our DOFs), store the type, positon (pi),
-            # and axis (ni) info, w.r.t. the base frame.
-            if step.joint_type != JointType.FIXED:
-                _type.append(step.joint_type)
-                p.append(p_from_T(T))
-                n.append(R_from_T(T) @ step.nlocal)
-                idxs.append(idx)
-
             # Take action based on the joint type: Move the transform T
             # up the kinematic chain (remaining w.r.t. the base frame).
             T = T \
@@ -325,6 +317,14 @@ class AdvancedKinematicChain():
                     Teye() if step.joint_type == JointType.FIXED else
                     error(self.node, f"Unknown joint type: {step.joint_type}")
                 )
+
+            # For active joints (our DOFs), store the type, positon (pi),
+            # and axis (ni) info, w.r.t. the base frame.
+            if step.joint_type != JointType.FIXED:
+                _type.append(step.joint_type)
+                p.append(p_from_T(T))
+                n.append(R_from_T(T) @ step.nlocal)
+                idxs.append(idx)
 
         # Collect the tip information.
         ptip = p_from_T(T)
