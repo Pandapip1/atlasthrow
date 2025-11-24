@@ -143,7 +143,7 @@ class ConstraintType(enum.Enum):
 
 class IKinConstraint(ABC):
     def __init__(self, name, chain):
-        self.name
+        self.name = name
         self.chain = chain
 
     @abstractmethod
@@ -154,7 +154,7 @@ class IKinConstraint(ABC):
         pass
 
     @abstractmethod
-    def getRowTargets(self) -> np.array:
+    def getRowTargets(self, dt) -> np.array:
         """
         Gets the desired values for this constraint
 
@@ -163,7 +163,7 @@ class IKinConstraint(ABC):
         pass
 
     @abstractmethod
-    def getPositionCoeffs(self) -> np.array:
+    def getPositionCoeffs(self, dt) -> np.array:
         """
         Gets the joint position coefficients for this constraint
 
@@ -172,7 +172,7 @@ class IKinConstraint(ABC):
         pass
 
     @abstractmethod
-    def getVelocityCoeffs(self) -> np.array:
+    def getVelocityCoeffs(self, dt) -> np.array:
         """
         Gets the joint velocity coefficients for this constraint
 
@@ -216,7 +216,7 @@ class IKinConstraint(ABC):
 # Define the full kinematic chain
 class AdvancedKinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, q0, q0dot, gamma = 0):
+    def __init__(self, node, q0, q0dot, gamma = 0.05):
         self.node = node
 
         # Initialize constraints array
@@ -354,13 +354,15 @@ class AdvancedKinematicChain():
     
     def ikin(self, dt):
         desired = np.concatenate([
-            constraint.getRowTargets()
+            constraint.getRowTargets(dt)
             for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
         ] + [ self.qc ])
+        print(desired)
+        print(f"desired: {desired.shape}")
         J = np.vstack([
             np.hstack([
-                constraint.getPositionCoeffs(),
-                constraint.getVelocityCoeffs(),
+                constraint.getPositionCoeffs(dt),
+                constraint.getVelocityCoeffs(dt),
             ])
             for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
         ] + [
@@ -370,9 +372,13 @@ class AdvancedKinematicChain():
             ])
             for index in range(len(self.joint_names))
         ])
+        print(f"J: {J.shape}")
         J_inv = J.T @ np.linalg.pinv(J @ J.T + self.gamma ** 2 * np.eye(len(desired)))
-        N = np.eye(len(desired)) - J_inv @ J
-        gradient_term = np.zeros(2*n)
+        print(f"J_inv: {J_inv.shape}")
+        print("J_inv @ J:", (J_inv @ J).shape)
+        N = np.eye(J_inv.shape[0]) - J_inv @ J
+        print("N:", N.shape)
+        gradient_term = np.zeros(len(self.qc) + len(self.qcdot))
         for c in self.constraints:
             if c.getConstraintType() is ConstraintType.GRADIENT:
                 g = np.concatenate([c.getPositionGradient(), c.getVelocityGradient()])

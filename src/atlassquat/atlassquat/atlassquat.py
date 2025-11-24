@@ -31,6 +31,7 @@ from utils.TrajectoryUtils      import *
 
 # Grab the general fkin from HW5 P5.
 from advkinematicchain.AdvancedKinematicChain import AdvancedKinematicChain
+from advkinematicchain.LinkPoseConstraint import LinkPoseConstraint
 
 #
 #   Trajectory Generator Node Class
@@ -58,6 +59,10 @@ class TrajectoryNode(Node):
 
         # Set up the kinematic chain object.
         self.chain = AdvancedKinematicChain(self, np.zeros(37), np.zeros(37))
+        self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3))
+        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3))
+        self.chain.add_constraint(self.leftFootConstraint)
+        self.chain.add_constraint(self.rightFootConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -125,25 +130,12 @@ class TrajectoryNode(Node):
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
 
-        # Grab the last joint command position and task errors.
-        qclast = self.qc
-        eplast = self.ep
-        eRlast = self.eR
-
-        # # First task: keep velocity of "center of mass" 0
-        # pdcom = np.array() # x, y position of current com
-        # vdcom = np.zeros(2) # desired x, y velocity of com is 0
-
-        # (_, _, Jhead, _) = self.headChain.fkin(qclast)
-
-        # Jcom = Jhead / 2 # Jacobian for first task
-        # Jcom = Jcom[:-1, :] # disregard z coordinate of "com"
-
         # Second task: moving feet up and down
         t1 = self.t % self.period
+        offset = -4.5
         if t1 < self.period / 2:
             # going up->down
-            (s, sdot) = goto(t1, self.period/2, 0.0, -1.0)
+            (s, sdot) = goto(t1, self.period/2, 0.+offset, 1.0+offset)
 
             pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
@@ -151,7 +143,7 @@ class TrajectoryNode(Node):
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         else:
             # going down->up
-            (s, sdot) = goto(t1 - self.period/2, self.period/2, -1.0, 0.0)
+            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1.0+offset, 0.+offset)
 
             pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
@@ -165,30 +157,10 @@ class TrajectoryNode(Node):
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
 
-        # Inverse kinematics
-        (_, _, JvleftFoot, JwleftFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.leftFootLink)
-        (_, _, JvrightFoot, JwRightFoot) = self.chain.relative_fkin(qclast, self.centerLink, self.rightFootLink)
+        self.leftFootConstraint.setDesiredPosition(pdLeftFoot)
+        self.rightFootConstraint.setDesiredPosition(pdRightFoot)
 
-        # Compute the reference velocities (with errors of last cycle).
-        vr = vdfeet + self.lam * eplast
-        wr = wdfeet + self.lam * eRlast
-
-        # Compute the inverse kinematics.
-        J = np.vstack((JvleftFoot, JvrightFoot, JwleftFoot, JwRightFoot))
-        xrdot = np.concatenate((vdfeet, wdfeet))
-        qcdot = np.linalg.pinv(J) @ xrdot
-
-        # Integrate the joint position.
-        qc = qclast + self.dt * qcdot
-
-        # Compute the new forward kinematics for equivalent task commands.
-        (pcLeftFoot, RcLeftFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.leftFootLink)
-        (pcRightFoot, RcRightFoot, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightFootLink)
-
-        # Save the joint command position and task errors.
-        self.qc = qc
-        self.ep = ep(np.concatenate((pdLeftFoot, pdRightFoot)), np.concatenate((pcLeftFoot, pcRightFoot)))
-        self.eR = np.concatenate((eR(RdL, RcLeftFoot), eR(RdR, RcRightFoot)))
+        qc, qcdot = self.chain.ikin(self.dt)
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
@@ -198,15 +170,15 @@ class TrajectoryNode(Node):
         header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.pubjoint.publish(JointState(
             header=header,
-            name=self.jointnames,
+            name=self.chain.joint_names,
             position=qc.tolist(),
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(Rdfeet,pdfeet)))
+            pose=Pose_from_Rp(RdL, pdLeftFoot)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vdfeet,wdfeet)))
+            twist=Twist_from_vw(vdfeet, wdfeet)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
