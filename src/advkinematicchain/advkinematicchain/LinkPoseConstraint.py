@@ -19,7 +19,7 @@ class LinkPoseConstraint(IKinConstraint):
         pc, Rc, _, _ = self.chain.relative_fkin(qc, self.reference_link, self.target_link)
 
         dp = self.pd - pc
-        vd = dp / dt
+        vd = -dp / dt
 
         R_err = self.Rd @ Rc.T
         W = sp.linalg.logm(R_err)

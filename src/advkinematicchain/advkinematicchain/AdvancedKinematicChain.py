@@ -216,7 +216,7 @@ class IKinConstraint(ABC):
 # Define the full kinematic chain
 class AdvancedKinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, q0, q0dot, gamma = 0.05):
+    def __init__(self, node, q0, q0dot, gamma = 0.3):
         self.node = node
 
         # Initialize constraints array

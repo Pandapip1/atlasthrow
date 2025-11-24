@@ -132,7 +132,7 @@ class TrajectoryNode(Node):
 
         # Second task: moving feet up and down
         t1 = self.t % self.period
-        offset = -4.5
+        offset = 0
         if t1 < self.period / 2:
             # going up->down
             (s, sdot) = goto(t1, self.period/2, 0.+offset, 1.0+offset)
