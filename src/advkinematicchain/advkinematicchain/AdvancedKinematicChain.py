@@ -219,7 +219,7 @@ class IKinConstraint(ABC):
 # Define the full kinematic chain
 class AdvancedKinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, q0, q0dot, gamma = 0.05):
+    def __init__(self, node, q0, q0dot, gamma = 0.0):
         self.node = node
 
         # Initialize constraints array
@@ -378,7 +378,11 @@ class AdvancedKinematicChain():
             ])
             for index in range(len(self.joint_names))
         ])
-        J_inv = J.T @ np.linalg.pinv(J @ J.T + self.gamma ** 2 * np.eye(len(desired)))
+        J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
+            np.arange(J.shape[0]) < len(desired) - len(self.qc),
+            self.gamma**2,
+            0.0
+        )))
         N = np.eye(J_inv.shape[0]) - J_inv @ J
         gradient_term = np.zeros(len(self.qc) + len(self.qcdot))
         for c in self.constraints:

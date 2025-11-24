@@ -59,8 +59,8 @@ class TrajectoryNode(Node):
 
         # Set up the kinematic chain object.
         self.chain = AdvancedKinematicChain(self, np.zeros(30), np.zeros(30))
-        self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3))
-        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3))
+        self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.chain.add_constraint(self.leftFootConstraint)
         self.chain.add_constraint(self.rightFootConstraint)
 
@@ -135,7 +135,7 @@ class TrajectoryNode(Node):
         offset = np.array([0., 0., 0.])
         if t1 < self.period / 2:
             # going up->down
-            (s, sdot) = goto(t1, self.period/2, 0., 1.0)
+            (s, sdot) = goto(t1, self.period/2, 0., 1.)
 
             pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
@@ -143,7 +143,7 @@ class TrajectoryNode(Node):
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         else:
             # going down->up
-            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1.0, 0.)
+            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1., 0.)
 
             pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
@@ -158,7 +158,9 @@ class TrajectoryNode(Node):
         wdfeet = np.concatenate((vzero(), vzero()))
 
         self.leftFootConstraint.setDesiredPosition(pdLeftFoot)
+        self.leftFootConstraint.setDesiredVelocity(vdLeftFoot)
         self.rightFootConstraint.setDesiredPosition(pdRightFoot)
+        self.rightFootConstraint.setDesiredVelocity(vdRightFoot)
 
         qc, qcdot = self.chain.ikin(self.dt)
 
