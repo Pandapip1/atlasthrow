@@ -58,7 +58,7 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
 
         # Set up the kinematic chain object.
-        self.chain = AdvancedKinematicChain(self, np.zeros(37), np.zeros(37))
+        self.chain = AdvancedKinematicChain(self, np.zeros(30), np.zeros(30))
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3))
         self.chain.add_constraint(self.leftFootConstraint)
@@ -132,7 +132,7 @@ class TrajectoryNode(Node):
 
         # Second task: moving feet up and down
         t1 = self.t % self.period
-        offset = 0
+        offset = -1
         if t1 < self.period / 2:
             # going up->down
             (s, sdot) = goto(t1, self.period/2, 0.+offset, 1.0+offset)

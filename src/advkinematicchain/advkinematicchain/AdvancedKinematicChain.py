@@ -114,7 +114,7 @@ class JointType(enum.Enum):
 # Define a single step in the URDF (kinematic chain).
 class URDFStep():
     def __init__(self, name, joint_type, reverse, Tshift, nlocal):
-        nlocal_norm = nlocal / np.linalg.norm(nlocal) if nlocal is not None else None
+        nlocal_norm = nlocal / np.linalg.norm(nlocal) if nlocal is not None and not np.isclose(np.linalg.norm(nlocal), 0.) else None
         # Store the permanent/fixed/URDF data.
         self.name       = name        # Joint name
         self.joint_type = joint_type  # Joint type (per above enumeration)
@@ -126,7 +126,10 @@ class URDFStep():
         return f"URDFStep(name={self.name}, joint_type={self.joint_type}, reverse={self.reverse})"
 
     def __eq__(self, other):
-        return self.name == other.name and self.joint_type == other.joint_type and self.reverse == other.reverse and np.isclose(self.Tshift, other.Tshift) and np.isclose(self.nlocal, other.nlocal)
+        if not isinstance(other, URDFStep): return False
+        t_eq = (self.Tshift is None and other.Tshift is None) or (self.Tshift is not None and other.Tshift is not None and np.allclose(self.Tshift, other.Tshift))
+        n_eq = (self.nlocal is None and other.nlocal is None) or (self.nlocal is not None and other.nlocal is not None and np.allclose(self.nlocal, other.nlocal))
+        return self.name == other.name and self.joint_type == other.joint_type and self.reverse == other.reverse and t_eq and n_eq
     
     def getReverse(self):
         return URDFStep(
@@ -199,7 +202,7 @@ class IKinConstraint(ABC):
         pass
 
     @abstractmethod
-    def getGain(self, joint_positions, joint_velocities) -> np.array:
+    def getGain(self) -> np.array:
         """
         Gets the gain for the gradient descent. Higher gain = stronger but less stable lock.
         """
@@ -216,7 +219,7 @@ class IKinConstraint(ABC):
 # Define the full kinematic chain
 class AdvancedKinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node, q0, q0dot, gamma = 0.3):
+    def __init__(self, node, q0, q0dot, gamma = 0.2):
         self.node = node
 
         # Initialize constraints array
@@ -229,7 +232,10 @@ class AdvancedKinematicChain():
         self.robot = Robot.from_xml_string(read_HTML(node))
 
         # Get joint ordering
-        self.joint_names = [ joint.name for joint in self.robot.joints if joint.type != JointType.FIXED ]
+        self.joint_names = [
+            joint.name for joint in self.robot.joints
+            if joint.type not in ['fixed']
+        ]
         if len(q0) != len(self.joint_names):
             error(node, f"q0 wrong length: was {len(q0)} expected {len(self.joint_names)}")
         if len(q0dot) != len(self.joint_names):
@@ -279,7 +285,7 @@ class AdvancedKinematicChain():
         if final_link not in self.link_traversal[initial_link]:
             error(self.node, f"Could not find path to final link {final_link} from initial link {initial_link}")
         
-        chain = reversed(self.link_traversal[initial_link][final_link])
+        chain = self.link_traversal[initial_link][final_link]
 
         ### INITIALIZE ###
         # We will build up three lists.  For each DOF (non-fixed, active
@@ -296,7 +302,10 @@ class AdvancedKinematicChain():
         # We walk the chain, one URDF step at a time, adjusting T as we
         # go.  Each step could be a fixed or active URDF joint.
         for step in chain:
-            idx = self.joint_names.index(step.name)
+            try:
+                idx = self.joint_names.index(step.name)
+            except ValueError:
+                error(self.node, f"{step.name} somehow not in chain?!")
 
             # For active joints (our DOFs), store the type, positon (pi),
             # and axis (ni) info, w.r.t. the base frame.
@@ -308,14 +317,13 @@ class AdvancedKinematicChain():
 
             # Take action based on the joint type: Move the transform T
             # up the kinematic chain (remaining w.r.t. the base frame).
-            step = step.getReverse()
             T = T \
                 @ (step.Tshift if step.Tshift is not None else Teye()) \
                 @ (
-                    T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type is JointType.REVOLUTE else
-                    T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type is JointType.LINEAR else
-                    Teye() if step.joint_type is JointType.FIXED else
-                    error(self.node, f"Unknown joint type: {joint.joint_type}")
+                    T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type == JointType.REVOLUTE else
+                    T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type == JointType.LINEAR else
+                    Teye() if step.joint_type == JointType.FIXED else
+                    error(self.node, f"Unknown joint type: {step.joint_type}")
                 )
 
         # Collect the tip information.
@@ -357,8 +365,6 @@ class AdvancedKinematicChain():
             constraint.getRowTargets(dt)
             for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
         ] + [ self.qc ])
-        print(desired)
-        print(f"desired: {desired.shape}")
         J = np.vstack([
             np.hstack([
                 constraint.getPositionCoeffs(dt),
@@ -372,12 +378,8 @@ class AdvancedKinematicChain():
             ])
             for index in range(len(self.joint_names))
         ])
-        print(f"J: {J.shape}")
         J_inv = J.T @ np.linalg.pinv(J @ J.T + self.gamma ** 2 * np.eye(len(desired)))
-        print(f"J_inv: {J_inv.shape}")
-        print("J_inv @ J:", (J_inv @ J).shape)
         N = np.eye(J_inv.shape[0]) - J_inv @ J
-        print("N:", N.shape)
         gradient_term = np.zeros(len(self.qc) + len(self.qcdot))
         for c in self.constraints:
             if c.getConstraintType() is ConstraintType.GRADIENT:

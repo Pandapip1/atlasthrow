@@ -15,21 +15,23 @@ class LinkPoseConstraint(IKinConstraint):
         return ConstraintType.ROW
 
     def getRowTargets(self, dt):
+        if dt == 0:
+            return np.zeros(6)
         qc = self.chain.qc
         pc, Rc, _, _ = self.chain.relative_fkin(qc, self.reference_link, self.target_link)
 
         dp = self.pd - pc
-        vd = -dp / dt
+        vd = dp / dt
 
         R_err = self.Rd @ Rc.T
         W = sp.linalg.logm(R_err)
-        wd = -np.array([W[2,1], W[0,2], W[1,0]]) / dt
+        wd = np.array([W[2,1], W[0,2], W[1,0]]) / dt
 
         return np.concatenate([vd, wd])
 
     def getPositionCoeffs(self, dt):
         n = len(self.chain.joint_names)
-        return np.vstack([np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n), np.zeros(n)])
+        return np.zeros((6, n))
 
     def getVelocityCoeffs(self, dt):
         qc = self.chain.qc
