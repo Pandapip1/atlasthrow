@@ -57,7 +57,7 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
 
         # Set up the kinematic chain object.
-        self.chain = AdvancedKinematicChain(self)
+        self.chain = AdvancedKinematicChain(self, np.zeros(37), np.zeros(37))
 
         self.jointnames = self.chain.joint_names
 

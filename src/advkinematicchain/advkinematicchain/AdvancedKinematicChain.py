@@ -23,6 +23,7 @@ import enum
 import rclpy
 import numpy as np
 
+from abc                        import ABC, abstractmethod
 from rclpy.node                 import Node
 from rclpy.qos                  import QoSProfile, DurabilityPolicy
 from std_msgs.msg               import String
@@ -136,6 +137,74 @@ class URDFStep():
             nlocal = -self.nlocal if self.nlocal is not None else None,
         )
 
+class ConstraintType(enum.Enum):
+    ROW      = 0
+    GRADIENT = 1
+
+class IKinConstraint(ABC):
+    def __init__(self, name, chain):
+        self.name
+        self.chain = chain
+
+    @abstractmethod
+    def getConstraintType(self) -> ConstraintType:
+        """
+        Gets the ConstraintType associated with this IKinConstraint
+        """
+        pass
+
+    @abstractmethod
+    def getRowTargets(self) -> np.array:
+        """
+        Gets the desired values for this constraint
+
+        TIP: use self.chain.qc to get current joint positions, qcdot to get current joint velocities
+        """
+        pass
+
+    @abstractmethod
+    def getPositionCoeffs(self) -> np.array:
+        """
+        Gets the joint position coefficients for this constraint
+
+        TIP: use self.chain.joint_names to get the ordering
+        """
+        pass
+
+    @abstractmethod
+    def getVelocityCoeffs(self) -> np.array:
+        """
+        Gets the joint velocity coefficients for this constraint
+
+        TIP: use self.chain.joint_names to get the ordering
+        """
+        pass
+
+    @abstractmethod
+    def getPositionGradient(self) -> np.array:
+        """
+        Gets the gradient to descend along in the position space. To do gradient ascent, just flip the sign.
+
+        TIP: use self.chain.qc to get current joint positions, qcdot to get current joint velocities
+        """
+        pass
+
+    @abstractmethod
+    def getVelocityGradient(self) -> np.array:
+        """
+        Gets the gradient to descend along in the velocity space. To do gradient ascent, just flip the sign.
+
+        TIP: use self.chain.qc to get current joint positions, qcdot to get current joint velocities
+        """
+        pass
+
+    @abstractmethod
+    def getGain(self, joint_positions, joint_velocities) -> np.array:
+        """
+        Gets the gain for the gradient descent. Higher gain = stronger but less stable lock.
+        """
+        pass
+
 #
 #   Kinematic Chain Object
 #
@@ -147,14 +216,24 @@ class URDFStep():
 # Define the full kinematic chain
 class AdvancedKinematicChain():
     # Initialization - load the URDF and set up the chain.
-    def __init__(self, node):
+    def __init__(self, node, q0, q0dot, gamma = 0):
         self.node = node
+
+        # Initialize constraints array
+        self.constraints = []
+        self.qc = q0
+        self.qcdot = q0dot
+        self.gamma = gamma # For damped pseudoinverse
 
         # Read the URDF's HTML description.
         self.robot = Robot.from_xml_string(read_HTML(node))
 
         # Get joint ordering
         self.joint_names = [ joint.name for joint in self.robot.joints if joint.type != JointType.FIXED ]
+        if len(q0) != len(self.joint_names):
+            error(node, f"q0 wrong length: was {len(q0)} expected {len(self.joint_names)}")
+        if len(q0dot) != len(self.joint_names):
+            error(node, f"q0dot wrong length: was {len(q0dot)} expected {len(self.joint_names)}")
 
         # Traverse the joints
         self.link_traversal = {}
@@ -263,3 +342,45 @@ class AdvancedKinematicChain():
 
         # Return the info
         return (ptip, Rtip, Jv, Jw)
+    
+    def add_constraint(self, constraint):
+        self.constraints.append(constraint)
+
+    def remove_constraint(self, constraint):
+        self.constraints.remove(constraint)
+
+    def clear_constraints(self):
+        self.constraints.clear()
+    
+    def ikin(self, dt):
+        desired = np.concatenate([
+            constraint.getRowTargets()
+            for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
+        ] + [ self.qc ])
+        J = np.vstack([
+            np.hstack([
+                constraint.getPositionCoeffs(),
+                constraint.getVelocityCoeffs(),
+            ])
+            for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
+        ] + [
+            np.hstack([
+                np.where(np.arange(len(self.joint_names)) == index, 1.0, 0.0),
+                np.where(np.arange(len(self.joint_names)) == index, -dt, 0.0)
+            ])
+            for index in range(len(self.joint_names))
+        ])
+        J_inv = J.T @ np.linalg.pinv(J @ J.T + self.gamma ** 2 * np.eye(len(desired)))
+        N = np.eye(len(desired)) - J_inv @ J
+        gradient_term = np.zeros(2*n)
+        for c in self.constraints:
+            if c.getConstraintType() is ConstraintType.GRADIENT:
+                g = np.concatenate([c.getPositionGradient(), c.getVelocityGradient()])
+                gradient_term += c.getGain() * (N @ g)
+        output = J_inv @ desired - gradient_term
+        qc, qcdot = output[:len(self.joint_names)], output[len(self.joint_names):]
+
+        self.qc = qc
+        self.qcdot = qcdot
+
+        return qc, qcdot
