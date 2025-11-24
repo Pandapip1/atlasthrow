@@ -18,7 +18,6 @@ class LinkPoseConstraint(IKinConstraint):
     def getConstraintType(self):
         return ConstraintType.ROW
 
-    # Known incorrect: setting self.vd will not self.vd in correct direction, setting w breaks everything
     def getRowTargets(self, dt):
         if dt == 0:
             return np.zeros(6)
