@@ -32,6 +32,7 @@ from utils.TrajectoryUtils      import *
 # Grab the general fkin from HW5 P5.
 from advkinematicchain.AdvancedKinematicChain import AdvancedKinematicChain
 from advkinematicchain.LinkPoseConstraint import LinkPoseConstraint
+from advkinematicchain.LockPlaneConstraint import LockPlaneConstraint
 
 #
 #   Trajectory Generator Node Class
@@ -61,8 +62,10 @@ class TrajectoryNode(Node):
         self.chain = AdvancedKinematicChain(self, np.zeros(30), np.zeros(30))
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.lockingConstraint = LockPlaneConstraint("rightFootLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.chain.add_constraint(self.leftFootConstraint)
         self.chain.add_constraint(self.rightFootConstraint)
+        self.chain.add_constraint(self.lockingConstraint)
 
         self.jointnames = self.chain.joint_names
 
