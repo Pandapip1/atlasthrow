@@ -140,21 +140,10 @@ class URDFStep():
             nlocal = -self.nlocal if self.nlocal is not None else None,
         )
 
-class ConstraintType(enum.Enum):
-    ROW      = 0
-    GRADIENT = 1
-
 class IKinConstraint(ABC):
     def __init__(self, name, chain):
         self.name = name
         self.chain = chain
-
-    @abstractmethod
-    def getConstraintType(self) -> ConstraintType:
-        """
-        Gets the ConstraintType associated with this IKinConstraint
-        """
-        pass
 
     @abstractmethod
     def getRowTargets(self, dt) -> np.array:
@@ -180,31 +169,6 @@ class IKinConstraint(ABC):
         Gets the joint velocity coefficients for this constraint
 
         TIP: use self.chain.joint_names to get the ordering
-        """
-        pass
-
-    @abstractmethod
-    def getPositionGradient(self) -> np.array:
-        """
-        Gets the gradient to descend along in the position space. To do gradient ascent, just flip the sign.
-
-        TIP: use self.chain.qc to get current joint positions, qcdot to get current joint velocities
-        """
-        pass
-
-    @abstractmethod
-    def getVelocityGradient(self) -> np.array:
-        """
-        Gets the gradient to descend along in the velocity space. To do gradient ascent, just flip the sign.
-
-        TIP: use self.chain.qc to get current joint positions, qcdot to get current joint velocities
-        """
-        pass
-
-    @abstractmethod
-    def getGain(self) -> np.array:
-        """
-        Gets the gain for the gradient descent. Higher gain = stronger but less stable lock.
         """
         pass
 
@@ -363,14 +327,14 @@ class AdvancedKinematicChain():
     def ikin(self, dt):
         desired = np.concatenate([
             constraint.getRowTargets(dt)
-            for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
+            for constraint in self.constraints
         ] + [ self.qc ])
         J = np.vstack([
             np.hstack([
                 constraint.getPositionCoeffs(dt),
                 constraint.getVelocityCoeffs(dt),
             ])
-            for constraint in self.constraints if constraint.getConstraintType() is ConstraintType.ROW
+            for constraint in self.constraints
         ] + [
             np.hstack([
                 np.where(np.arange(len(self.joint_names)) == index, 1.0, 0.0),
@@ -384,12 +348,7 @@ class AdvancedKinematicChain():
             0.0
         )))
         N = np.eye(J_inv.shape[0]) - J_inv @ J
-        gradient_term = np.zeros(len(self.qc) + len(self.qcdot))
-        for c in self.constraints:
-            if c.getConstraintType() is ConstraintType.GRADIENT:
-                g = np.concatenate([c.getPositionGradient(), c.getVelocityGradient()])
-                gradient_term += c.getGain() * (N @ g)
-        output = J_inv @ desired - gradient_term
+        output = J_inv @ desired
         qc, qcdot = output[:len(self.joint_names)], output[len(self.joint_names):]
 
         self.qc = qc

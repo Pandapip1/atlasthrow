@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 
-from advkinematicchain.AdvancedKinematicChain import IKinConstraint, ConstraintType
+from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class LockPlaneConstraint(IKinConstraint):
     def __init__(self, name, chain, target_link_ref, target_link_1, target_link_2, axis, lam_v = 1.0, lam_w = 1.0):
@@ -47,13 +47,3 @@ class LockPlaneConstraint(IKinConstraint):
         Jw = Jw2 - Jw1
 
         return np.vstack([Jv, Jw])
-
-    # Unused gradient descent stuff
-    def getPositionGradient(self):
-        raise NotImplementedError()
-
-    def getVelocityGradient(self):
-        raise NotImplementedError()
-
-    def getGain(self, joint_positions=None, joint_velocities=None):
-        raise NotImplementedError()

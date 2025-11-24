@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 
-from advkinematicchain.AdvancedKinematicChain import IKinConstraint, ConstraintType
+from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class LinkPoseConstraint(IKinConstraint):
     def __init__(self, name, chain, target_link, reference_link, p0, R0, v0, w0, lam_v = 1.0, lam_w = 1.0):
@@ -14,9 +14,6 @@ class LinkPoseConstraint(IKinConstraint):
         self.wd = w0
         self.lam_v = lam_v
         self.lam_w = lam_w
-
-    def getConstraintType(self):
-        return ConstraintType.ROW
 
     def getRowTargets(self, dt):
         if dt == 0:
@@ -72,13 +69,3 @@ class LinkPoseConstraint(IKinConstraint):
         old = self.wd
         self.wd = wd
         return old
-
-    # Unused gradient descent stuff
-    def getPositionGradient(self):
-        raise NotImplementedError()
-
-    def getVelocityGradient(self):
-        raise NotImplementedError()
-
-    def getGain(self, joint_positions=None, joint_velocities=None):
-        raise NotImplementedError()
