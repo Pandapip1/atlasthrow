@@ -132,22 +132,22 @@ class TrajectoryNode(Node):
 
         # Second task: moving feet up and down
         t1 = self.t % self.period
-        offset = -1
+        offset = np.array([0., 0., 0.])
         if t1 < self.period / 2:
             # going up->down
-            (s, sdot) = goto(t1, self.period/2, 0.+offset, 1.0+offset)
+            (s, sdot) = goto(t1, self.period/2, 0., 1.0)
 
-            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
+            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
-            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s
+            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         else:
             # going down->up
-            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1.0+offset, 0.+offset)
+            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1.0, 0.)
 
-            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s
+            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
-            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s
+            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
         
         RdL = Reye()
