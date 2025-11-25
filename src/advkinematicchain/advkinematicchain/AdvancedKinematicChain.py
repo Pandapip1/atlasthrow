@@ -269,7 +269,10 @@ class AdvancedKinematicChain():
             try:
                 idx = self.joint_names.index(step.name)
             except ValueError:
-                error(self.node, f"{step.name} somehow not in chain?!")
+                if step.joint_type != JointType.FIXED:
+                    error(self.node, f"{step.name} somehow not in chain?!")
+                else:
+                    idx = None
 
             # Take action based on the joint type: Move the transform T
             # up the kinematic chain (remaining w.r.t. the base frame).
