@@ -136,8 +136,8 @@ class URDFStep():
             name = self.name,
             joint_type = self.joint_type,
             reverse = not self.reverse,
-            Tshift = np.linalg.inv(self.Tshift),
-            nlocal = -self.nlocal if self.nlocal is not None else None,
+            Tshift = self.Tshift,
+            nlocal = self.nlocal,
         )
 
 class IKinConstraint(ABC):
@@ -188,22 +188,28 @@ class AdvancedKinematicChain():
 
         # Initialize constraints array
         self.constraints = []
-        self.qc = q0
-        self.qcdot = q0dot
         self.gamma = gamma # For damped pseudoinverse
 
         # Read the URDF's HTML description.
         self.robot = Robot.from_xml_string(read_HTML(node))
 
         # Get joint ordering
-        self.joint_names = [
-            joint.name for joint in self.robot.joints
+        joints = [
+            joint for joint in self.robot.joints
             if joint.type not in ['fixed']
         ]
-        if len(q0) != len(self.joint_names):
-            error(node, f"q0 wrong length: was {len(q0)} expected {len(self.joint_names)}")
-        if len(q0dot) != len(self.joint_names):
-            error(node, f"q0dot wrong length: was {len(q0dot)} expected {len(self.joint_names)}")
+        self.joint_names = [ joint.name for joint in joints ]
+        self.joint_lower_limits = np.array([ joint.limit.lower for joint in joints ])
+        self.joint_upper_limits = np.array([ joint.limit.upper for joint in joints ])
+
+        self.qc = [
+            q0[joint_name] if joint_name in q0 else 0.
+            for joint_name in self.joint_names
+        ]
+        self.qcdot = [
+            q0dot[joint_name] if joint_name in q0dot else 0.
+            for joint_name in self.joint_names
+        ]
 
         # Traverse the joints
         self.link_traversal = {}
@@ -276,14 +282,16 @@ class AdvancedKinematicChain():
 
             # Take action based on the joint type: Move the transform T
             # up the kinematic chain (remaining w.r.t. the base frame).
-            T = T \
-                @ (step.Tshift if step.Tshift is not None else Teye()) \
-                @ (
-                    T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type == JointType.REVOLUTE else
-                    T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type == JointType.LINEAR else
-                    Teye() if step.joint_type == JointType.FIXED else
-                    error(self.node, f"Unknown joint type: {step.joint_type}")
-                )
+            Tshift = step.Tshift if step.Tshift is not None else Teye()
+            Ttrans = \
+                T_from_Rp(Rotn(step.nlocal, q[idx]), pzero()) if step.joint_type == JointType.REVOLUTE else \
+                T_from_Rp(Reye(), step.nlocal * q[idx]) if step.joint_type == JointType.LINEAR else \
+                Teye() if step.joint_type == JointType.FIXED else \
+                error(self.node, f"Unknown joint type: {step.joint_type}")
+            if not step.reverse:
+                T = T @ Tshift @ Ttrans
+            else:
+                T = T @ np.linalg.inv(Ttrans) @ np.linalg.inv(Tshift)
 
             # For active joints (our DOFs), store the type, positon (pi),
             # and axis (ni) info, w.r.t. the base frame.
@@ -351,7 +359,10 @@ class AdvancedKinematicChain():
             0.0
         )))
         N = np.eye(J_inv.shape[0]) - J_inv @ J
-        output = J_inv @ desired
+        output = J_inv @ desired - N @ np.concatenate([
+            2. * (self.qc - self.joint_lower_limits) / (self.joint_upper_limits - self.joint_lower_limits) - 1.,
+            np.zeros(len(self.joint_names))
+        ])
         qc, qcdot = output[:len(self.joint_names)], output[len(self.joint_names):]
 
         self.qc = qc

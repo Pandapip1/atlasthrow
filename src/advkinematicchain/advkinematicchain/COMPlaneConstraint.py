@@ -4,7 +4,7 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class COMPlaneConstraint(IKinConstraint):
-    def __init__(self, name, chain, link1, link2, reference_link, dir_vec, lam=1.0):
+    def __init__(self, name, chain, link1, link2, reference_link, dir_vec, lam=0.1):
         super().__init__(name, chain)
         self.link1 = link1
         self.link2 = link2
@@ -18,7 +18,7 @@ class COMPlaneConstraint(IKinConstraint):
         self._cache_Jcom = None
     
     def _getCOMData(self, robot, qc):
-        if self._cache_qc is not qc:
+        if self._cache_qc is None or not np.array_equal(self._cache_qc, qc):
             self._cache_fk.clear()
             self._cache_qc = qc
 
@@ -50,22 +50,27 @@ class COMPlaneConstraint(IKinConstraint):
 
         qc = self.chain.qc
 
+        com, _ = self._getCOMData(self.chain.robot, qc)
+
         p1, _, _, _ = self.chain.relative_fkin(qc, self.reference_link, self.link1)
         p2, _, _, _ = self.chain.relative_fkin(qc, self.reference_link, self.link2)
         normal = np.cross(p2 - p1, self.dir_vec)
         normal = normal / np.linalg.norm(normal)
 
-        com, _ = self._getCOMData(self.chain.robot, qc)
-
         dist = np.dot(com - p1, normal)
-        v_target = -self.lam * dist / dt * normal
+        v_target = -self.lam * dist / dt
 
-        return v_target
+        return np.array([v_target])
 
     def getPositionCoeffs(self, dt):
-        return np.zeros((3, len(self.chain.joint_names)))
+        return np.zeros((1, len(self.chain.joint_names)))
 
     def getVelocityCoeffs(self, dt):
-        _, Jcom = self._getCOMData(self.chain.robot, self.chain.qc)
+        com, Jcom = self._getCOMData(self.chain.robot, self.chain.qc)
 
-        return Jcom
+        p1, _, _, _ = self.chain.relative_fkin(self.chain.qc, self.reference_link, self.link1)
+        p2, _, _, _ = self.chain.relative_fkin(self.chain.qc, self.reference_link, self.link2)
+        normal = np.cross(p2 - p1, self.dir_vec)
+        normal = normal / np.linalg.norm(normal)
+
+        return (normal @ Jcom).reshape((1, len(self.chain.joint_names)))

@@ -60,7 +60,14 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
 
         # Set up the kinematic chain object.
-        self.chain = AdvancedKinematicChain(self, np.zeros(30), np.zeros(30))
+        q0 = {
+            # Slight bias to correct side of singularity for squat purposes
+            "l_leg_hpy": -0.2,
+            "r_leg_hpy": -0.2,
+            "l_leg_kny": 0.2,
+            "r_leg_kny": 0.2,
+        }
+        self.chain = AdvancedKinematicChain(self, q0, {})
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.footingConstraint = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
