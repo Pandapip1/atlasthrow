@@ -67,26 +67,32 @@ class TrajectoryNode(Node):
             "r_leg_hpy": -0.2,
             "l_leg_kny": 0.2,
             "r_leg_kny": 0.2,
+            "r_arm_elx": -0.2,
+            "l_arm_elx": -0.2
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {})
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+
         self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, "back_bkz", 0)
+
+        self.rightElbowAngleConstraint = JointSetConstraint("rightElbowAngleConstraint", self.chain, "r_arm_elz", 0)
+
         self.footingConstraint = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
 
         #self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         self.chain.add_constraint(self.leftFootConstraint)
         self.chain.add_constraint(self.rightFootConstraint)
         self.chain.add_constraint(self.torsoAngleConstraint)
         self.chain.add_constraint(self.footingConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
-        # self.chain.add_constraint(self.balancingConstraint)
-
-        self.torsoAngleConstraint.setJointPosition(np.radians(45))
+        self.chain.add_constraint(self.leftHandConstraint)
+        self.chain.add_constraint(self.balancingConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -104,6 +110,12 @@ class TrajectoryNode(Node):
         self.pRH0 = pRH0
         self.pRHTurn = pRHTurn
         self.pRHTurn[2] = self.pRH0[2]
+
+        (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
+        (pLHTurn, _, _, _) = self.chain.relative_fkin(self.qTurn, self.centerLink, self.leftHandLink)
+        self.pLH0 = pLH0
+        self.pLHTurn = pLHTurn
+        self.pLHTurn[2] = self.pLH0[2]
 
         squat_height = 0.25
 
@@ -177,6 +189,11 @@ class TrajectoryNode(Node):
 
             pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
             vdRightHand = (self.pRHTurn - self.pRH0) * sdot
+
+            pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
+            vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
+
+            wzdTorso = np.radians(45) * s
         else:
             # going down->up
             (s, sdot) = goto(t1 - self.period/2, self.period/2, 1., 0.)
@@ -188,6 +205,11 @@ class TrajectoryNode(Node):
 
             pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
             vdRightHand = (self.pRHTurn - self.pRH0) * sdot
+
+            pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
+            vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
+
+            wzdTorso = np.radians(45) * s
         
         RdL = Reye()
         RdR = Reye()
@@ -204,6 +226,13 @@ class TrajectoryNode(Node):
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
+        self.leftHandConstraint.setDesiredPosition(pdLeftHand)
+        self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
+
+        self.torsoAngleConstraint.setJointPosition(wzdTorso)
+
+        self.rightElbowAngleConstraint.setJointPosition(0)
+
         qc, qcdot = self.chain.ikin(self.dt)
 
         ##############################################################
@@ -219,14 +248,14 @@ class TrajectoryNode(Node):
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(RdL, pdLeftFoot)))
+            pose=Pose_from_Rp(RdL, pdRightHand)))
         self.pubtwist.publish(TwistStamped(
             header=header,
             twist=Twist_from_vw(vdfeet, wdfeet)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='desired',
-            transform=Transform_from_Rp(RdL,pdLeftFoot)))
+            transform=Transform_from_Rp(RdL,pdRightHand)))
 
 
 #
