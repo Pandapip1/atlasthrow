@@ -35,6 +35,7 @@ from advkinematicchain.LinkPoseConstraint import LinkPoseConstraint
 from advkinematicchain.LockPlaneConstraint import LockPlaneConstraint
 from advkinematicchain.COMPlaneConstraint import COMPlaneConstraint
 from advkinematicchain.JointSetConstraint import JointSetConstraint
+from advkinematicchain.JJRelativeProjectionConstraint import JJRelativeProjectionConstraint
 
 #
 #   Trajectory Generator Node Class
@@ -67,13 +68,15 @@ class TrajectoryNode(Node):
             "r_leg_hpy": -0.2,
             "l_leg_kny": 0.2,
             "r_leg_kny": 0.2,
+            "back_bky": -0.5,
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {})
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, "back_bkz", 0)
-        self.footingConstraint = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
+        self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, "back_bkz")
+        self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
+        self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
 
         #self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
@@ -82,7 +85,8 @@ class TrajectoryNode(Node):
         self.chain.add_constraint(self.leftFootConstraint)
         self.chain.add_constraint(self.rightFootConstraint)
         self.chain.add_constraint(self.torsoAngleConstraint)
-        self.chain.add_constraint(self.footingConstraint)
+        self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint2)
         self.chain.add_constraint(self.rightHandConstraint)
         # self.chain.add_constraint(self.balancingConstraint)
 

@@ -4,10 +4,10 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class JointSetConstraint(IKinConstraint):
-    def __init__(self, name, chain, link, q0):
+    def __init__(self, name, chain, link):
         super().__init__(name, chain)
         self.link = link
-        self.qc = q0
+        self.qc = self.chain.qc[self.chain.joint_names.index(self.link)]
 
     def getRowTargets(self, dt):
         return np.array([ self.qc ])
