@@ -34,6 +34,7 @@ from advkinematicchain.AdvancedKinematicChain import AdvancedKinematicChain
 from advkinematicchain.LinkPoseConstraint import LinkPoseConstraint
 from advkinematicchain.LockPlaneConstraint import LockPlaneConstraint
 from advkinematicchain.COMPlaneConstraint import COMPlaneConstraint
+from advkinematicchain.JointSetConstraint import JointSetConstraint
 
 #
 #   Trajectory Generator Node Class
@@ -70,12 +71,16 @@ class TrajectoryNode(Node):
         self.chain = AdvancedKinematicChain(self, q0, {})
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, "back_bkz", 0)
         self.footingConstraint = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
         self.chain.add_constraint(self.leftFootConstraint)
         self.chain.add_constraint(self.rightFootConstraint)
+        self.chain.add_constraint(self.torsoAngleConstraint)
         self.chain.add_constraint(self.footingConstraint)
         self.chain.add_constraint(self.balancingConstraint)
+
+        self.torsoAngleConstraint.setJointPosition(np.radians(45))
 
         self.jointnames = self.chain.joint_names
 
