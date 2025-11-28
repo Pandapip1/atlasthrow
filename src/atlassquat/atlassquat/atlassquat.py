@@ -79,17 +79,17 @@ class TrajectoryNode(Node):
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
 
-        #self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         self.chain.add_constraint(self.leftFootConstraint)
-        self.chain.add_constraint(self.rightFootConstraint)
-        self.chain.add_constraint(self.torsoAngleConstraint)
+        # self.chain.add_constraint(self.rightFootConstraint)
+        # self.chain.add_constraint(self.torsoAngleConstraint)
         self.chain.add_constraint(self.footingConstraint1)
         self.chain.add_constraint(self.footingConstraint2)
+        # self.chain.add_constraint(self.leftHandConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
-        self.chain.add_constraint(self.leftHandConstraint)
         self.chain.add_constraint(self.balancingConstraint)
 
         self.jointnames = self.chain.joint_names
@@ -229,7 +229,7 @@ class TrajectoryNode(Node):
 
         self.torsoAngleConstraint.setJointPosition(wzdTorso)
 
-        self.rightElbowAngleConstraint.setJointPosition(0)
+        # self.rightElbowAngleConstraint.setJointPosition(0)
 
         qc, qcdot = self.chain.ikin(self.dt)
 
