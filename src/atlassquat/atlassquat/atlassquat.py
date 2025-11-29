@@ -159,7 +159,7 @@ class TrajectoryNode(Node):
         self.pubtwist = self.create_publisher(TwistStamped, '/twist', 10)
         self.tfbroad  = tf2_ros.TransformBroadcaster(self)
         self.pubballpos = self.create_publisher(Point, "/ball_position", 10)
-        self.puballmarker = self.create_publisher(Point, "/ball_marker", 10)
+        self.puballmarker = self.create_publisher(Marker, "/ball_marker", 10)
         self.pubtarget = self.create_publisher(Marker, "/target_marker", 10)
 
         # Wait for a connection to happen.  This isn't necessary, but
@@ -358,8 +358,8 @@ class TrajectoryNode(Node):
         ball_point.z = float(self.ball_position[2])
         self.pubballpos.publish(ball_point)
 
-        self.puballmarker.header.stamp = self.get_clock().now().to_msg()
-        self.puballmarker.pose.position = ball_point
+        self.ball_marker.header.stamp = self.get_clock().now().to_msg()
+        self.ball_marker.pose.position = ball_point
         self.puballmarker.publish(self.ball_marker)
 
         self.ball_collision(self, ball_point)
