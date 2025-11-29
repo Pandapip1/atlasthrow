@@ -115,6 +115,9 @@ class TrajectoryNode(Node):
         self.pLHTurn = pLHTurn
         self.pLHTurn[2] = self.pLH0[2]
 
+        self.pRHThrow = ... # final position after throw
+        self.vRHThrow = ... # final velocity after throw 
+
         squat_height = 0.25
 
         # Define the other points.
@@ -136,6 +139,7 @@ class TrajectoryNode(Node):
 
         # Other constants
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
+        self.periodThrow = 6.0
 
         ##############################################################
         # Setup the logistics of the node:
@@ -175,6 +179,8 @@ class TrajectoryNode(Node):
 
         # Second task: moving feet up and down
         t1 = self.t % self.period
+        t2 = self.t % self.periodThrow
+
         offset = np.array([0., 0., 0.])
         if t1 < self.period / 2:
             # going up->down
@@ -184,30 +190,52 @@ class TrajectoryNode(Node):
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
             pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
-
-            pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
-            vdRightHand = (self.pRHTurn - self.pRH0) * sdot
-
-            pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
-            vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
-
-            wzdTorso = np.radians(45) * s
         else:
             # going down->up
-            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1., 0.)
+            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1., 0.) 
 
             pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
             vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
             pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
 
+        if t2 < self.periodThrow / 3.0:
+            # move hand back
+            (s, sdot) = goto(t1, self.period/2, 0., 1.)
             pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
             vdRightHand = (self.pRHTurn - self.pRH0) * sdot
 
             pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
             vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
+        else if t2 < 2 * self.periodThrow / 3.0:
+            # throw
+            throwPlaneVecXY = (self.pRHThrow - self.pRHTurn)[0:2] # vector parallel to throwing plane, starting from throw start
+            throwAxisMag = np.linalg.norm(throwPlaneVecXY)
+            throwPlaneVecXY = throwPlaneVecXY / throwAxisMag
 
-            wzdTorso = np.radians(45) * s
+            initPosThrowPlane = np.zeros(2)
+            finPosThrowPlane = np.array([throwAxisMag, (self.pRHThrow - self.pRHTurn)[2]])
+
+            initVelThrowPlane = np.zeros(2)
+            # assume final velocity is in the plane containing z axis for now
+            finVelThrowPlane = np.array([np.linalg.norm(self.vRHThrow[0:2]), self.vRHThrow[2]])
+
+            # p = a * s, pdot = a * sdot, z = b * s^2 + c * s, zdot = 2 * b * s * sdot + c * sdot
+            finsdot = finVelThrowPlane[0] / finPosThrowPlane[0]
+            a = throwAxisMag    
+            b = finVelThrowPlane[2] / finsdot - finpos[2]
+            c = finpos[2] - b
+
+            (s, sdot) = spline(t2, self.periodThrow/2, 0, 1, 0, finsdot)
+
+            pdThrowPlane = np.array([a * s, b * s * s + c * s])
+            vdThrowPlane = np.array([a * sdot, 2 * b * s * sdot + c * sdot])
+            
+            # reverse projection
+            pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]])
+            vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]])
+        else:
+            # come back to initial pos
         
         RdL = Reye()
         RdR = Reye()
