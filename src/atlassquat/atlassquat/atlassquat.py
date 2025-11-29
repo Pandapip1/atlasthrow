@@ -273,7 +273,7 @@ class TrajectoryNode(Node):
 
             pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
             vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
-        else if t2 < 2 * self.periodThrow / 3.0:
+        elif t2 < 2 * self.periodThrow / 3.0:
             # throw
             throwPlaneVecXY = (self.pRHThrow - self.pRHTurn)[0:2] # vector parallel to throwing plane, starting from throw start
             throwAxisMag = np.linalg.norm(throwPlaneVecXY)
