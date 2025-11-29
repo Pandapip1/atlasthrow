@@ -116,8 +116,8 @@ class TrajectoryNode(Node):
         self.pLHTurn = pLHTurn
         self.pLHTurn[2] = self.pLH0[2]
 
-        self.pRHThrow = ... # final position after throw
-        self.vRHThrow = ... # final velocity after throw 
+        self.pRHThrow = np.array([pRHTurn[0] + 1, pRHTurn[1] + 0.5, pRHTurn[2] + 1]) # final positio after throw
+        self.vRHThrow = np.array[2.0, 1.0, -0.5] # final velocity after throw 
 
         squat_height = 0.25
 
@@ -298,8 +298,8 @@ class TrajectoryNode(Node):
             vdThrowPlane = np.array([a * sdot, 2 * b * s * sdot + c * sdot])
             
             # reverse projection
-            pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]])
-            vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]])
+            pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]]).T
+            vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
         else:
             # come back to initial pos
 
