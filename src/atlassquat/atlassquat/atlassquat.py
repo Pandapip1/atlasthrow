@@ -21,7 +21,8 @@ from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
 from asyncio            import Future
 from rclpy.node         import Node
 from geometry_msgs.msg  import PoseStamped, TwistStamped
-from geometry_msgs.msg  import TransformStamped
+from geometry_msgs.msg  import TransformStamped, Point
+from visualization_msgs.msg import Marker
 from sensor_msgs.msg    import JointState
 from std_msgs.msg       import Header
 
@@ -141,6 +142,14 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
+        #Target and ball code
+        self.target_radius = 0.20   # 20 cm sphere
+        self.xy_bounds = [-2, 2]  # x, y limits can change just dummy values
+        self.xy_bounds = [0.5, 2]  # z limit can change just dummy values
+
+        self.spawn_new_target()
+        self.spawn_ball()
+
         ##############################################################
         # Setup the logistics of the node:
         # Add publishers to send the joint and task commands.  Also
@@ -149,6 +158,9 @@ class TrajectoryNode(Node):
         self.pubpose  = self.create_publisher(PoseStamped, '/pose', 10)
         self.pubtwist = self.create_publisher(TwistStamped, '/twist', 10)
         self.tfbroad  = tf2_ros.TransformBroadcaster(self)
+        self.pubballpos = self.create_publisher(Point, "/ball_position", 10)
+        self.puballmarker = self.create_publisher(Point, "/ball_marker", 10)
+        self.pubtarget = self.create_publisher(Marker, "/target_marker", 10)
 
         # Wait for a connection to happen.  This isn't necessary, but
         # means we don't start until the rest of the system is ready.
@@ -164,6 +176,60 @@ class TrajectoryNode(Node):
         self.timer = self.create_timer(self.dt, self.update)
         self.get_logger().info("Running with dt of %f seconds (%fHz)" %
                                (self.dt, 1/self.dt))
+
+    # Spawn target at random
+    def spawn_new_target(self):
+        self.target_position = np.array([
+            np.random.uniform(*self.world_bounds),
+            np.random.uniform(*self.world_bounds),
+            np.random.uniform(*self.world_bounds),
+        ])
+        self.get_logger().info(f"New target spawned at {self.target_position}")
+        self.target_hit = False
+
+        self.target_marker = Marker()
+        self.target_marker.header.frame_id = "world"
+        self.target_marker.type = Marker.SPHERE
+        self.target_marker.action = Marker.ADD
+
+        self.target_marker.scale.x = 2 * self.target_radius
+        self.target_marker.scale.y = 2 * self.target_radius
+        self.target_marker.scale.z = 2 * self.target_radius
+
+        self.target_marker.color.r = 1.0
+        self.target_marker.color.g = 0.1
+        self.target_marker.color.b = 0.1
+        self.target_marker.color.a = 1.0
+    
+    # Spawn ball in hand
+    def spawn_ball():
+        self.ball_marker = Marker()
+        self.ball_marker.header.frame_id = "world"
+        self.ball_marker.type = Marker.SPHERE
+        self.ball_marker.action = Marker.ADD
+        self.ball_marker.scale.x = 0.10   # 10 cm ball
+        self.ball_marker.scale.y = 0.10
+        self.ball_marker.scale.z = 0.10
+        self.ball_marker.color.r = 0.1
+        self.ball_marker.color.g = 0.8
+        self.ball_marker.color.b = 0.1
+        self.ball_marker.color.a = 1.0
+
+        self.ball_position = self.pRH0.copy()
+        self.ball_velocity = np.zeros(3)
+        self.ball_released = False
+    
+    # CHECK COLLISION
+    def ball_collision(self, ball_point):
+        ball_pos = np.array([ball_point.x, ball_point.y, ball_point.z])
+        dist = np.linalg.norm(ball_pos - self.target_position)
+
+        if dist <= self.target_radius:
+            if not self.target_hit:
+                self.target_hit = True
+                self.get_logger().info("TARGET HIT! Respawning...")
+                self.spawn_new_target()
+                self.spawn_ball()
 
     # Shutdown
     def shutdown(self):
@@ -236,7 +302,7 @@ class TrajectoryNode(Node):
             vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]])
         else:
             # come back to initial pos
-        
+
         RdL = Reye()
         RdR = Reye()
         pdfeet = np.concatenate((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
@@ -261,12 +327,48 @@ class TrajectoryNode(Node):
 
         qc, qcdot = self.chain.ikin(self.dt)
 
+        # Release ball
+        readyToThrow = (t2 == 2*self.periodThrow /3.0)
+
+        if readyToThrow and not self.ball_released:
+            (_, _, Jv, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightHandLink) 
+            self.ball_velocity = Jv @ qcdot
+
+            self.ball_released = True
+            self.get_logger().info("BALL RELEASED")
+
+        if not self.ball_released:
+            (pRH, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightHandLink) 
+            self.ball_position = pRH.copy()
+        else:
+            self.ball_position += self.ball_velocity * self.dt
+            self.ball_velocity[2] -= 9.81 * self.dt
+
         ##############################################################
         # Finish by publishing the data (joint and task commands).
         #  qc and qcdot = Joint Commands  as  /joint_states  to view/plot
         #  pd and Rd    = Task pos/orient as  /pose & TF     to view/plot
         #  vd and wd    = Task velocities as  /twist         to      plot
         header=Header(stamp=self.now.to_msg(), frame_id='world')
+
+        ball_point = Point()
+        ball_point.x = float(self.ball_position[0])
+        ball_point.y = float(self.ball_position[1])
+        ball_point.z = float(self.ball_position[2])
+        self.pubballpos.publish(ball_point)
+
+        self.puballmarker.header.stamp = self.get_clock().now().to_msg()
+        self.puballmarker.pose.position = ball_point
+        self.puballmarker.publish(self.ball_marker)
+
+        self.ball_collision(self, ball_point)
+
+        self.target_marker.header.stamp = self.get_clock().now().to_msg()
+        self.target_marker.pose.position.x = float(self.target_position[0])
+        self.target_marker.pose.position.y = float(self.target_position[1])
+        self.target_marker.pose.position.z = float(self.target_position[2])
+        self.pubtarget.publish(self.target_marker)
+
         self.pubjoint.publish(JointState(
             header=header,
             name=self.chain.joint_names,
