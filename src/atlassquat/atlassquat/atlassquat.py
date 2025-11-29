@@ -322,7 +322,7 @@ class TrajectoryNode(Node):
         self.leftHandConstraint.setDesiredPosition(pdLeftHand)
         self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
 
-        self.torsoAngleConstraint.setJointPosition(wzdTorso)
+        # self.torsoAngleConstraint.setJointPosition(wzdTorso)
 
         # self.rightElbowAngleConstraint.setJointPosition(0)
 
