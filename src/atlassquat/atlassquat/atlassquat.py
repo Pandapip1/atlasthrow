@@ -202,7 +202,7 @@ class TrajectoryNode(Node):
         self.target_marker.color.a = 1.0
     
     # Spawn ball in hand
-    def spawn_ball():
+    def spawn_ball(self):
         self.ball_marker = Marker()
         self.ball_marker.header.frame_id = "world"
         self.ball_marker.type = Marker.SPHERE
