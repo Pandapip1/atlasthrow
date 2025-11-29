@@ -145,7 +145,7 @@ class TrajectoryNode(Node):
         #Target and ball code
         self.target_radius = 0.20   # 20 cm sphere
         self.xy_bounds = [-2, 2]  # x, y limits can change just dummy values
-        self.xy_bounds = [0.5, 2]  # z limit can change just dummy values
+        self.z_bounds = [0.5, 2]  # z limit can change just dummy values
 
         self.spawn_new_target()
         self.spawn_ball()
@@ -180,9 +180,9 @@ class TrajectoryNode(Node):
     # Spawn target at random
     def spawn_new_target(self):
         self.target_position = np.array([
-            np.random.uniform(*self.world_bounds),
-            np.random.uniform(*self.world_bounds),
-            np.random.uniform(*self.world_bounds),
+            np.random.uniform(*self.xy_bounds),
+            np.random.uniform(*self.xy_bounds),
+            np.random.uniform(*self.z_bounds),
         ])
         self.get_logger().info(f"New target spawned at {self.target_position}")
         self.target_hit = False
@@ -202,7 +202,7 @@ class TrajectoryNode(Node):
         self.target_marker.color.a = 1.0
     
     # Spawn ball in hand
-    def spawn_ball():
+    def spawn_ball(self):
         self.ball_marker = Marker()
         self.ball_marker.header.frame_id = "world"
         self.ball_marker.type = Marker.SPHERE
@@ -302,6 +302,7 @@ class TrajectoryNode(Node):
             vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
         else:
             # come back to initial pos
+            ...
 
         RdL = Reye()
         RdR = Reye()
@@ -321,7 +322,7 @@ class TrajectoryNode(Node):
         self.leftHandConstraint.setDesiredPosition(pdLeftHand)
         self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
 
-        self.torsoAngleConstraint.setJointPosition(wzdTorso)
+        # self.torsoAngleConstraint.setJointPosition(wzdTorso)
 
         # self.rightElbowAngleConstraint.setJointPosition(0)
 
