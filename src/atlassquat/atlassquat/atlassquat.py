@@ -117,7 +117,7 @@ class TrajectoryNode(Node):
         self.pLHTurn[2] = self.pLH0[2]
 
         self.pRHThrow = np.array([pRHTurn[0] + 1, pRHTurn[1] + 0.5, pRHTurn[2] + 1]) # final positio after throw
-        self.vRHThrow = np.array[2.0, 1.0, -0.5] # final velocity after throw 
+        self.vRHThrow = np.array([2.0, 1.0, -0.5]) # final velocity after throw 
 
         squat_height = 0.25
 
