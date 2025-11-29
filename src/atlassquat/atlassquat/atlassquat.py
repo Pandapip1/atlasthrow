@@ -362,7 +362,7 @@ class TrajectoryNode(Node):
         self.ball_marker.pose.position = ball_point
         self.puballmarker.publish(self.ball_marker)
 
-        self.ball_collision(self, ball_point)
+        self.ball_collision(ball_point)
 
         self.target_marker.header.stamp = self.get_clock().now().to_msg()
         self.target_marker.pose.position.x = float(self.target_position[0])
