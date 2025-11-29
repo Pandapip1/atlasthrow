@@ -302,6 +302,7 @@ class TrajectoryNode(Node):
             vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]])
         else:
             # come back to initial pos
+            ...
 
         RdL = Reye()
         RdR = Reye()
