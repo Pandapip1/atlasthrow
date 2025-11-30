@@ -267,7 +267,8 @@ class TrajectoryNode(Node):
 
         if t2 < self.periodThrow / 3.0:
             # move hand back
-            (s, sdot) = goto(t1, self.period/2, 0., 1.)
+            (s, sdot) = goto(t2, self.periodThrow / 3.0, 0.0, 1.0)
+            
             pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
             vdRightHand = (self.pRHTurn - self.pRH0) * sdot
 
@@ -289,10 +290,10 @@ class TrajectoryNode(Node):
             # p = a * s, pdot = a * sdot, z = b * s^2 + c * s, zdot = 2 * b * s * sdot + c * sdot
             finsdot = finVelThrowPlane[0] / finPosThrowPlane[0]
             a = throwAxisMag    
-            b = finVelThrowPlane[2] / finsdot - finpos[2]
-            c = finpos[2] - b
+            b = finVelThrowPlane[1] / finsdot - finPosThrowPlane[1]
+            c = finPosThrowPlane[1] - b
 
-            (s, sdot) = spline(t2, self.periodThrow/2, 0, 1, 0, finsdot)
+            (s, sdot) = spline(t2 - self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, 0, finsdot)
 
             pdThrowPlane = np.array([a * s, b * s * s + c * s])
             vdThrowPlane = np.array([a * sdot, 2 * b * s * sdot + c * sdot])
@@ -302,7 +303,12 @@ class TrajectoryNode(Node):
             vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
         else:
             # come back to initial pos
-            ...
+            (s, sdot) = spline(t2 - 2 * self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, vRHThrow / (self.pRH0 - self.pRHThrow), 0)
+            
+            pdRightHand = self.pRHThrow + (self.pRH0 - self.pRHThrow) * s
+            vdRightHand = (self.pRH0 - self.pRHThrow) * sdot
+
+
 
         RdL = Reye()
         RdR = Reye()
@@ -319,8 +325,8 @@ class TrajectoryNode(Node):
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
-        self.leftHandConstraint.setDesiredPosition(pdLeftHand)
-        self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
+        #self.leftHandConstraint.setDesiredPosition(pdLeftHand)
+        #self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
 
         # self.torsoAngleConstraint.setJointPosition(wzdTorso)
 
