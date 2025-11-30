@@ -301,10 +301,10 @@ class TrajectoryNode(Node):
             
             # reverse projection
             pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]]).T
-            vdRightHand = self.vRHTurn + np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
+            vdRightHand = np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
         else:
             # come back to initial pos
-            (s, sdot) = spline(t2 - 2 * self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, vRHThrow / (self.pRH0 - self.pRHThrow), 0)
+            (s, sdot) = spline(t2 - 2 * self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, self.vRHThrow / (self.pRH0 - self.pRHThrow), 0)
             
             pdRightHand = self.pRHThrow + (self.pRH0 - self.pRHThrow) * s
             vdRightHand = (self.pRH0 - self.pRHThrow) * sdot
