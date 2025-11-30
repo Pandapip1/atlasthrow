@@ -144,6 +144,7 @@ class TrajectoryNode(Node):
 
         #Target and ball code
         self.target_radius = 0.20   # 20 cm sphere
+        self.ball_radius = 0.20   # 20 cm sphere
         self.xy_bounds = [-2, 2]  # x, y limits can change just dummy values
         self.z_bounds = [0.5, 2]  # z limit can change just dummy values
 
@@ -159,7 +160,7 @@ class TrajectoryNode(Node):
         self.pubtwist = self.create_publisher(TwistStamped, '/twist', 10)
         self.tfbroad  = tf2_ros.TransformBroadcaster(self)
         self.pubballpos = self.create_publisher(Point, "/ball_position", 10)
-        self.puballmarker = self.create_publisher(Point, "/ball_marker", 10)
+        self.pubballmarker = self.create_publisher(Marker, "/ball_marker", 10)
         self.pubtarget = self.create_publisher(Marker, "/target_marker", 10)
 
         # Wait for a connection to happen.  This isn't necessary, but
@@ -207,9 +208,9 @@ class TrajectoryNode(Node):
         self.ball_marker.header.frame_id = "world"
         self.ball_marker.type = Marker.SPHERE
         self.ball_marker.action = Marker.ADD
-        self.ball_marker.scale.x = 0.10   # 10 cm ball
-        self.ball_marker.scale.y = 0.10
-        self.ball_marker.scale.z = 0.10
+        self.ball_marker.scale.x = self.ball_radius
+        self.ball_marker.scale.y = self.ball_radius
+        self.ball_marker.scale.z = self.ball_radius
         self.ball_marker.color.r = 0.1
         self.ball_marker.color.g = 0.8
         self.ball_marker.color.b = 0.1
@@ -308,6 +309,8 @@ class TrajectoryNode(Node):
             pdRightHand = self.pRHThrow + (self.pRH0 - self.pRHThrow) * s
             vdRightHand = (self.pRH0 - self.pRHThrow) * sdot
 
+
+
         RdL = Reye()
         RdR = Reye()
         pdfeet = np.concatenate((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
@@ -362,11 +365,11 @@ class TrajectoryNode(Node):
         ball_point.z = float(self.ball_position[2])
         self.pubballpos.publish(ball_point)
 
-        self.puballmarker.header.stamp = self.get_clock().now().to_msg()
-        self.puballmarker.pose.position = ball_point
-        self.puballmarker.publish(self.ball_marker)
+        self.ball_marker.header.stamp = self.get_clock().now().to_msg()
+        self.ball_marker.pose.position = ball_point
+        self.pubballmarker.publish(self.ball_marker)
 
-        self.ball_collision(self, ball_point)
+        self.ball_collision(ball_point)
 
         self.target_marker.header.stamp = self.get_clock().now().to_msg()
         self.target_marker.pose.position.x = float(self.target_position[0])
