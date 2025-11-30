@@ -15,6 +15,7 @@ atlasquat.py
 import rclpy
 import numpy as np
 import tf2_ros
+import sys
 
 from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
 
@@ -393,6 +394,8 @@ class TrajectoryNode(Node):
             child_frame_id='desired',
             transform=Transform_from_Rp(RdL,pdRightHand)))
 
+        sys.stdout.flush()
+        sys.stderr.flush()
 
 #
 #  Main Code
