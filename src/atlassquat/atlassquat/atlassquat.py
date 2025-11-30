@@ -117,8 +117,10 @@ class TrajectoryNode(Node):
         self.pLHTurn = pLHTurn
         self.pLHTurn[2] = self.pLH0[2]
 
-        self.pRHThrow = np.array([pRHTurn[0] + 1, pRHTurn[1] + 0.5, pRHTurn[2] + 1]) # final positio after throw
-        self.vRHThrow = np.array([2.0, 1.0, -0.5]) # final velocity after throw 
+        print(pRHTurn)
+        self.pRHThrow = np.array([pRHTurn[0] + 0.23, pRHTurn[1] + 0.09, pRHTurn[2] + 0.1]) # final positio after throw
+        # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
+        self.vRHThrow = np.array([1.5, 1.0, 0.5]) # final velocity after throw 
 
         squat_height = 0.25
 
@@ -345,6 +347,7 @@ class TrajectoryNode(Node):
 
             self.ball_released = True
             self.get_logger().info(f"BALL RELEASED with velocity {self.ball_velocity}")
+            self.get_logger().info(f"RH at position {pdRightHand}")
 
         if not self.ball_released:
             (pRH, _, _, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightHandLink) 
