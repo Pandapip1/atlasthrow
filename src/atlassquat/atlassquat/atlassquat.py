@@ -99,26 +99,16 @@ class TrajectoryNode(Node):
         # Define the matching initial joint/task positions.
         self.q0 = np.array(self.chain.qc)
 
-        self.qTurn = np.array(self.chain.qc)
-        self.qTurn[self.jointnames.index('back_bkz')] = np.radians(45)
-
         (pL0, RL0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftFootLink)
         (pR0, RR0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightFootLink)
         
         (pRH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightHandLink)
-        (pRHTurn, _, _, _) = self.chain.relative_fkin(self.qTurn, self.centerLink, self.rightHandLink)
         self.pRH0 = pRH0
-        self.pRHTurn = pRHTurn
-        self.pRHTurn[2] = self.pRH0[2]
 
         (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
-        (pLHTurn, _, _, _) = self.chain.relative_fkin(self.qTurn, self.centerLink, self.leftHandLink)
         self.pLH0 = pLH0
-        self.pLHTurn = pLHTurn
-        self.pLHTurn[2] = self.pLH0[2]
 
-        print(pRHTurn)
-        self.pRHThrow = np.array([pRHTurn[0] + 0.09, pRHTurn[1] + 0.06, pRHTurn[2] + 0.05]) # final positio after throw
+        self.pRHThrow = np.array([0.74, -0.61, 0.515]) # final positio after throw
         # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
         self.vRHThrow = np.array([0.3, 0.4, 0.4]) # final velocity after throw 
 
