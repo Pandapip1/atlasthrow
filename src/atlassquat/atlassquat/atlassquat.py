@@ -118,9 +118,9 @@ class TrajectoryNode(Node):
         self.pLHTurn[2] = self.pLH0[2]
 
         print(pRHTurn)
-        self.pRHThrow = np.array([pRHTurn[0] + 0.23, pRHTurn[1] + 0.09, pRHTurn[2] + 0.1]) # final positio after throw
+        self.pRHThrow = np.array([pRHTurn[0] + 0.09, pRHTurn[1] + 0.06, pRHTurn[2] + 0.05]) # final positio after throw
         # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
-        self.vRHThrow = np.array([1.5, 1.0, 0.5]) # final velocity after throw 
+        self.vRHThrow = np.array([0.6, 0.4, 0.0]) # final velocity after throw 
 
         squat_height = 0.25
 
@@ -284,6 +284,8 @@ class TrajectoryNode(Node):
             throwAxisMag = np.linalg.norm(throwPlaneVecXY)
             throwPlaneVecXY = throwPlaneVecXY / throwAxisMag
 
+            print(f"throw plane vec: {throwPlaneVecXY}, magnitude: {throwAxisMag}")
+
             initPosThrowPlane = np.zeros(2)
             finPosThrowPlane = np.array([throwAxisMag, (self.pRHThrow - self.pRHTurn)[2]])
 
@@ -297,6 +299,8 @@ class TrajectoryNode(Node):
             b = finVelThrowPlane[1] / finsdot - finPosThrowPlane[1]
             c = finPosThrowPlane[1] - b
 
+            #print(f"a: {a} b: {b} c: {c}")
+
             (s, sdot) = spline(t2 - self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, 0, finsdot)
 
             pdThrowPlane = np.array([a * s, b * s * s + c * s])
@@ -304,6 +308,7 @@ class TrajectoryNode(Node):
             
             # reverse projection
             pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]]).T
+            print(f"pdRightHand: {pdRightHand}")
             vdRightHand = np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
         else:
             # come back to initial pos
