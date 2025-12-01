@@ -120,7 +120,7 @@ class TrajectoryNode(Node):
         print(pRHTurn)
         self.pRHThrow = np.array([pRHTurn[0] + 0.09, pRHTurn[1] + 0.06, pRHTurn[2] + 0.05]) # final positio after throw
         # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
-        self.vRHThrow = np.array([0.6, 0.4, 0.0]) # final velocity after throw 
+        self.vRHThrow = np.array([0.6, 0.4, 0.2]) # final velocity after throw 
 
         squat_height = 0.25
 
