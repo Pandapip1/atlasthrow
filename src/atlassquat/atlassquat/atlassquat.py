@@ -120,7 +120,7 @@ class TrajectoryNode(Node):
         print(pRHTurn)
         self.pRHThrow = np.array([pRHTurn[0] + 0.09, pRHTurn[1] + 0.06, pRHTurn[2] + 0.05]) # final positio after throw
         # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
-        self.vRHThrow = np.array([0.6, 0.4, 0.2]) # final velocity after throw 
+        self.vRHThrow = np.array([0.3, 0.4, 0.4]) # final velocity after throw 
 
         squat_height = 0.25
 
@@ -253,6 +253,10 @@ class TrajectoryNode(Node):
         t1 = self.t % self.period
         t2 = self.t % self.periodThrow
 
+        tI = 0.
+        tThrow = self.periodThrow / 2.
+        tReturn = self.periodThrow
+
         offset = np.array([0., 0., 0.])
         if t1 < self.period / 2:
             # going up->down
@@ -271,55 +275,10 @@ class TrajectoryNode(Node):
             pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
             vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
 
-        if t2 < self.periodThrow / 3.0:
-            # move hand back
-            (s, sdot) = goto(t2, self.periodThrow / 3.0, 0.0, 1.0)
-            
-            pdRightHand = self.pRH0 + (self.pRHTurn - self.pRH0) * s
-            vdRightHand = (self.pRHTurn - self.pRH0) * sdot
-
-            pdLeftHand = self.pLH0 + (self.pLHTurn - self.pLH0) * s
-            vdLeftHand = (self.pLHTurn - self.pLH0) * sdot
-        elif t2 < 2 * self.periodThrow / 3.0:
-            # throw
-            throwPlaneVecXY = (self.pRHThrow - self.pRHTurn)[0:2] # vector parallel to throwing plane, starting from throw start
-            throwAxisMag = np.linalg.norm(throwPlaneVecXY)
-            throwPlaneVecXY = throwPlaneVecXY / throwAxisMag
-
-            print(f"throw plane vec: {throwPlaneVecXY}, magnitude: {throwAxisMag}")
-
-            initPosThrowPlane = np.zeros(2)
-            finPosThrowPlane = np.array([throwAxisMag, (self.pRHThrow - self.pRHTurn)[2]])
-
-            initVelThrowPlane = np.zeros(2)
-            # assume final velocity is in the plane containing z axis for now
-            finVelThrowPlane = np.array([np.linalg.norm(self.vRHThrow[0:2]), self.vRHThrow[2]])
-
-            # p = a * s, pdot = a * sdot, z = b * s^2 + c * s, zdot = 2 * b * s * sdot + c * sdot
-            finsdot = finVelThrowPlane[0] / finPosThrowPlane[0]
-            a = throwAxisMag    
-            b = finVelThrowPlane[1] / finsdot - finPosThrowPlane[1]
-            c = finPosThrowPlane[1] - b
-
-            #print(f"a: {a} b: {b} c: {c}")
-
-            (s, sdot) = spline(t2 - self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, 0, finsdot)
-
-            pdThrowPlane = np.array([a * s, b * s * s + c * s])
-            vdThrowPlane = np.array([a * sdot, 2 * b * s * sdot + c * sdot])
-            
-            # reverse projection
-            pdRightHand = self.pRHTurn + np.array([(pdThrowPlane[0] * throwPlaneVecXY)[0], (pdThrowPlane[0] * throwPlaneVecXY)[1], pdThrowPlane[1]]).T
-            print(f"pdRightHand: {pdRightHand}")
-            vdRightHand = np.array([(vdThrowPlane[0] * throwPlaneVecXY)[0], (vdThrowPlane[0] * throwPlaneVecXY)[1], vdThrowPlane[1]]).T
+        if t2 < tThrow:
+            (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
         else:
-            # come back to initial pos
-            (s, sdot) = spline(t2 - 2 * self.periodThrow/3.0, self.periodThrow/3.0, 0, 1, self.vRHThrow / (self.pRH0 - self.pRHThrow), 0)
-            
-            pdRightHand = self.pRHThrow + (self.pRH0 - self.pRHThrow) * s
-            vdRightHand = (self.pRH0 - self.pRHThrow) * sdot
-
-
+            (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
         RdL = Reye()
         RdR = Reye()
@@ -346,7 +305,7 @@ class TrajectoryNode(Node):
         qc, qcdot = self.chain.ikin(self.dt)
 
         # Release ball
-        readyToThrow = t2 >= 2*self.periodThrow /3.0
+        readyToThrow = t2 >= tThrow
 
         if readyToThrow and not self.ball_released:
             (_, _, Jv, _) = self.chain.relative_fkin(qc, self.centerLink, self.rightHandLink) 
