@@ -154,6 +154,8 @@ class TrajectoryNode(Node):
         self.spawn_new_target()
         self.spawn_ball()
 
+        self.gravity = -1.25
+
         ##############################################################
         # Setup the logistics of the node:
         # Add publishers to send the joint and task commands.  Also
@@ -359,7 +361,7 @@ class TrajectoryNode(Node):
             self.ball_position = pRH.copy()
         else:
             self.ball_position += self.ball_velocity * self.dt
-            self.ball_velocity[2] -= 9.81 * self.dt
+            self.ball_velocity[2] += self.gravity * self.dt
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
