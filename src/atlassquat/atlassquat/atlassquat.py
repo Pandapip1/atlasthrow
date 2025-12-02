@@ -34,6 +34,7 @@ from utils.TrajectoryUtils      import *
 # Grab the general fkin from HW5 P5.
 from advkinematicchain.AdvancedKinematicChain import AdvancedKinematicChain
 from advkinematicchain.LinkPoseConstraint import LinkPoseConstraint
+from advkinematicchain.LinkPositionConstraint import LinkPositionConstraint
 from advkinematicchain.LockPlaneConstraint import LockPlaneConstraint
 from advkinematicchain.COMPlaneConstraint import COMPlaneConstraint
 from advkinematicchain.JointSetConstraint import JointSetConstraint
@@ -81,9 +82,8 @@ class TrajectoryNode(Node):
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
 
-        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         self.chain.add_constraint(self.leftFootConstraint)
         # self.chain.add_constraint(self.rightFootConstraint)
