@@ -344,7 +344,6 @@ class AdvancedKinematicChain():
         J = np.vstack([
             constraint.getVelocityCoeffs(dt) for constraint in self.constraints
         ])
-        print(J)
         J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
             np.arange(J.shape[0]) < len(desired) - len(self.qc),
             self.gamma**2,
