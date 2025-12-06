@@ -108,10 +108,6 @@ class TrajectoryNode(Node):
         (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
         self.pLH0 = pLH0
 
-        #self.pRHThrow = np.array([0.74, -0.61, 0.515]) # final positio after throw
-        # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
-        #self.vRHThrow = np.array([0.3, 0.4, 0.4]) # final velocity after throw 
-
         squat_height = 0.15
 
         # Define the other points.
@@ -194,10 +190,13 @@ class TrajectoryNode(Node):
         yvel = (yp - yhand) / self.balltime
         zvel = (zp - zhand + 0.5 * self.gravity * self.balltime**2) / self.balltime
 
-        self.pRHThrow = np.array([xhand, yhand, zhand]) # final positio after throw
+        self.pRHThrow = np.array([xhand, yhand, zhand]) # final position after throw
         self.vRHThrow = np.array([xvel , yvel , zvel]) # final velocity after throw 
         self.get_logger().info(f"pRHThrow: {self.pRHThrow}")
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
+
+        self.qInitThrow = # joint configuration at start of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.centerLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -294,8 +293,12 @@ class TrajectoryNode(Node):
 
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
+
+            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
+
+            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
 
         RdL = Reye()
         RdR = Reye()
@@ -309,8 +312,10 @@ class TrajectoryNode(Node):
         self.rightFootConstraint.setDesiredPosition(pdRightFoot)
         self.rightFootConstraint.setDesiredVelocity(vdRightFoot)
 
-        self.rightHandConstraint.setDesiredPosition(pdRightHand)
+        self.rightHandConstraint.setDesiredPosition(pdRightHand) # uncomment if joint spline doesn't work
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
+
+        
 
         #self.leftHandConstraint.setDesiredPosition(pdLeftHand)
         #self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
