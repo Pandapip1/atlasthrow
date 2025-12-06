@@ -326,6 +326,16 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
+    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None):
+        if pd is None and Rd is None:
+            raise ValueError("One of pd or Rd must be defined")
+        
+        raise NotImplementedError("Not implemented yet")
+
+        qc = None
+        qcdot = None
+        return qc, qcdot # qcdot will be none if vd and wd are None
+    
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
 
