@@ -195,7 +195,7 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"pRHThrow: {self.pRHThrow}")
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
-        self.qInitThrow = # joint configuration at start of throw
+        self.qInitThrow = self.chain.qc # joint configuration at start of throw
         (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.centerLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow) # joint configuration at end of throw
 
     # Spawn target at random
