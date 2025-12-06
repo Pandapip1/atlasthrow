@@ -294,11 +294,11 @@ class TrajectoryNode(Node):
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
-            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.self.qdotFinThrow)
+            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
-            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
+            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
 
         RdL = Reye()
         RdR = Reye()
