@@ -92,7 +92,7 @@ class TrajectoryNode(Node):
         self.chain.add_constraint(self.footingConstraint2)
         self.chain.add_constraint(self.balancingConstraint)
 
-        self.chain.add_constraint(self.leftFootConstraint)
+        # self.chain.add_constraint(self.leftFootConstraint)
         # self.chain.add_constraint(self.rightFootConstraint)
         # self.chain.add_constraint(self.torsoAngleConstraint)
         # self.chain.add_constraint(self.leftHandConstraint)
