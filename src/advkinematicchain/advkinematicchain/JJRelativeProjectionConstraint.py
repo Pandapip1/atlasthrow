@@ -22,9 +22,6 @@ class JJRelativeProjectionConstraint(IKinConstraint):
 
         return np.array(v_target * self.axis)
 
-    def getPositionCoeffs(self, dt):
-        return np.zeros((3, len(self.chain.joint_names)))
-
     def getVelocityCoeffs(self, dt):
         qc = self.chain.qc
         _, _, Jv1, _ = self.chain.relative_fkin(qc, self.link_base, self.link_aux)

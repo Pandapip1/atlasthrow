@@ -62,9 +62,6 @@ class COMPlaneConstraint(IKinConstraint):
 
         return np.array([v_target])
 
-    def getPositionCoeffs(self, dt):
-        return np.zeros((1, len(self.chain.joint_names)))
-
     def getVelocityCoeffs(self, dt):
         com, Jcom = self._getCOMData(self.chain.robot, self.chain.qc)
 

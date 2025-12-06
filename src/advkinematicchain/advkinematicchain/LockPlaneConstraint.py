@@ -12,9 +12,6 @@ class LockPlaneConstraint(IKinConstraint):
         self.axis = axis / np.linalg.norm(axis)
         self.lam = lam
 
-    def getConstraintType(self):
-        return ConstraintType.ROW
-
     def getRowTargets(self, dt):
         if dt == 0:
             return np.zeros(6)
@@ -29,9 +26,6 @@ class LockPlaneConstraint(IKinConstraint):
         w_target = -self.lam * np.array([W[2,1], W[0,2], W[1,0]]) / dt
 
         return w_target
-
-    def getPositionCoeffs(self, dt):
-        return np.zeros((3, len(self.chain.joint_names)))
 
     def getVelocityCoeffs(self, dt):
         qc = self.chain.qc

@@ -30,9 +30,6 @@ class LinkPoseConstraint(IKinConstraint):
 
         return np.concatenate([vd, wd])
 
-    def getPositionCoeffs(self, dt):
-        return np.zeros((6, len(self.chain.joint_names)))
-
     def getVelocityCoeffs(self, dt):
         qc = self.chain.qc
         _, _, Jv, Jw = self.chain.relative_fkin(qc, self.reference_link, self.target_link)
