@@ -312,6 +312,9 @@ class TrajectoryNode(Node):
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
 
+        self.fullBodyConstraint.setJointPositions(qcThrow)
+        self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
+
         self.leftFootConstraint.setDesiredPosition(pdLeftFoot)
         self.leftFootConstraint.setDesiredVelocity(vdLeftFoot)
         self.rightFootConstraint.setDesiredPosition(pdRightFoot)
@@ -320,7 +323,7 @@ class TrajectoryNode(Node):
         self.rightHandConstraint.setDesiredPosition(pdRightHand) # uncomment if joint spline doesn't work
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
-        
+            
 
         #self.leftHandConstraint.setDesiredPosition(pdLeftHand)
         #self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
