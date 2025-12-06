@@ -87,14 +87,16 @@ class TrajectoryNode(Node):
         self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
+        # Balancing
+        self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint2)
+        self.chain.add_constraint(self.balancingConstraint)
+
         self.chain.add_constraint(self.leftFootConstraint)
         # self.chain.add_constraint(self.rightFootConstraint)
         # self.chain.add_constraint(self.torsoAngleConstraint)
-        self.chain.add_constraint(self.footingConstraint1)
-        self.chain.add_constraint(self.footingConstraint2)
         # self.chain.add_constraint(self.leftHandConstraint)
         # self.chain.add_constraint(self.rightHandConstraint)
-        self.chain.add_constraint(self.balancingConstraint)
         self.chain.add_constraint(self.fullBodyConstraint)
 
         self.jointnames = self.chain.joint_names
