@@ -72,6 +72,7 @@ class TrajectoryNode(Node):
             "l_leg_kny": 0.2,
             "r_leg_kny": 0.2,
             "back_bky": -0.5,
+            "r_arm_ely": -0.2,
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.15)
