@@ -321,10 +321,8 @@ class AdvancedKinematicChain():
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
         
-        raise NotImplementedError("Not implemented yet")
-
-        qc = None
-        qcdot = None
+        qc = np.zeros(len(self.qc))
+        qcdot = np.zeros(len(self.qc))
         return qc, qcdot # qcdot will be none if vd and wd are None
     
     def add_constraint(self, constraint):
