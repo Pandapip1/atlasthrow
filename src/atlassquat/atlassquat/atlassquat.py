@@ -82,6 +82,7 @@ class TrajectoryNode(Node):
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.joint_names)
 
         self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
@@ -92,8 +93,9 @@ class TrajectoryNode(Node):
         self.chain.add_constraint(self.footingConstraint1)
         self.chain.add_constraint(self.footingConstraint2)
         # self.chain.add_constraint(self.leftHandConstraint)
-        self.chain.add_constraint(self.rightHandConstraint)
+        # self.chain.add_constraint(self.rightHandConstraint)
         self.chain.add_constraint(self.balancingConstraint)
+        self.chain.add_constraint(self.fullBodyConstraint)
 
         self.jointnames = self.chain.joint_names
 

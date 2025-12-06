@@ -17,10 +17,10 @@ class JointSetConstraint(IKinConstraint):
     def getRowTargets(self, dt):
         qlast = np.array([
             self.chain.qc[self.chain.joint_names.index(joint)]
-            for joint in joints
+            for joint in self.joints
         ])
 
-        return np.array([ (self.qc - qlast) * self.lam + self.qcdot ])
+        return (self.qc - qlast) * self.lam + self.qcdot
 
     def getVelocityCoeffs(self, dt):
         qc = self.chain.qc
@@ -30,18 +30,18 @@ class JointSetConstraint(IKinConstraint):
             for joint in self.joints
         ])
     
-    def getJointPosition(self):
+    def getJointPositions(self):
         return self.qc
 
-    def setJointPosition(self, qc):
+    def setJointPositions(self, qc):
         old = self.qc
         self.qc = qc
         return old
     
-    def getJointVelocity(self):
+    def getJointVelocitys(self):
         return self.qc
 
-    def setJointVelocity(self, qcdot):
+    def setJointVelocitys(self, qcdot):
         old = self.qcdot
         self.qcdot = qcdot
         return old
