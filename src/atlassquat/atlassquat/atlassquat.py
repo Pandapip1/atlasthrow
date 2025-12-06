@@ -108,11 +108,11 @@ class TrajectoryNode(Node):
         (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
         self.pLH0 = pLH0
 
-        self.pRHThrow = np.array([0.74, -0.61, 0.515]) # final positio after throw
+        #self.pRHThrow = np.array([0.74, -0.61, 0.515]) # final positio after throw
         # [atlassquat-3] [INFO] [1764463652.872376463] [trajectory]: RH at position [ 0.87465159 -0.53874943  0.56830462]
-        self.vRHThrow = np.array([0.3, 0.4, 0.4]) # final velocity after throw 
+        #self.vRHThrow = np.array([0.3, 0.4, 0.4]) # final velocity after throw 
 
-        squat_height = 0.25
+        squat_height = 0.15
 
         # Define the other points.
         self.leftFootUp = pL0.copy()
@@ -135,16 +135,22 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
+        self.balltime = 1.2 # How long the throw takes
+        self.throw_offset = 1.3 # how far away from target to throw just dummy
+        self.release_height = 0.5 # dummy can tune later
+
+
         #Target and ball code
         self.target_radius = 0.20   # 20 cm sphere
         self.ball_radius = 0.20   # 20 cm sphere
-        self.xy_bounds = [-2, 2]  # x, y limits can change just dummy values
-        self.z_bounds = [0.5, 2]  # z limit can change just dummy values
+        self.xy_bounds = [0.6, 2]  # x, y limits can change just dummy values
+        self.z_bounds = [0.6, 2]  # z limit can change just dummy values
 
         self.spawn_new_target()
         self.spawn_ball()
 
         self.gravity = -1.25
+        self.compute_throw_end(self.target_position)
 
         ##############################################################
         # Setup the logistics of the node:
@@ -172,6 +178,26 @@ class TrajectoryNode(Node):
         self.timer = self.create_timer(self.dt, self.update)
         self.get_logger().info("Running with dt of %f seconds (%fHz)" %
                                (self.dt, 1/self.dt))
+    
+    # Compute the final thro position and velocity
+    def compute_throw_end(self, target_pos):
+        xp, yp, zp = target_pos
+
+        self.throw_direction = atan2(yp, xp)
+        self.get_logger().info(f"throw_direction: {self.throw_direction}")
+
+        xhand = xp - self.throw_offset * cos(self.throw_direction)
+        yhand = yp - self.throw_offset * sin(self.throw_direction)
+        zhand = self.release_height
+
+        xvel = (xp - xhand) / self.balltime
+        yvel = (yp - yhand) / self.balltime
+        zvel = (zp - zhand + 0.5 * self.gravity * self.balltime**2) / self.balltime
+
+        self.pRHThrow = np.array([xhand, yhand, zhand]) # final positio after throw
+        self.vRHThrow = np.array([xvel , yvel , zvel]) # final velocity after throw 
+        self.get_logger().info(f"pRHThrow: {self.pRHThrow}")
+        self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -226,6 +252,7 @@ class TrajectoryNode(Node):
                 self.get_logger().info("TARGET HIT! Respawning...")
                 self.spawn_new_target()
                 self.spawn_ball()
+                self.compute_throw_end(self.target_position)
 
     # Shutdown
     def shutdown(self):
