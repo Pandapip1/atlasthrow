@@ -155,15 +155,6 @@ class IKinConstraint(ABC):
         pass
 
     @abstractmethod
-    def getPositionCoeffs(self, dt) -> np.array:
-        """
-        Gets the joint position coefficients for this constraint
-
-        TIP: use self.chain.joint_names to get the ordering
-        """
-        pass
-
-    @abstractmethod
     def getVelocityCoeffs(self, dt) -> np.array:
         """
         Gets the joint velocity coefficients for this constraint
@@ -349,19 +340,9 @@ class AdvancedKinematicChain():
         desired = np.concatenate([
             constraint.getRowTargets(dt)
             for constraint in self.constraints
-        ] + [ self.qc ])
+        ])
         J = np.vstack([
-            np.hstack([
-                constraint.getPositionCoeffs(dt),
-                constraint.getVelocityCoeffs(dt),
-            ])
-            for constraint in self.constraints
-        ] + [
-            np.hstack([
-                np.where(np.arange(len(self.joint_names)) == index, 1.0, 0.0),
-                np.where(np.arange(len(self.joint_names)) == index, -dt, 0.0)
-            ])
-            for index in range(len(self.joint_names))
+            constraint.getVelocityCoeffs(dt) for constraint in self.constraints
         ])
         J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
             np.arange(J.shape[0]) < len(desired) - len(self.qc),
@@ -369,13 +350,7 @@ class AdvancedKinematicChain():
             0.0
         )))
         N = np.eye(J_inv.shape[0]) - J_inv @ J
-        output = J_inv @ desired - N @ np.concatenate([
-            2. * (self.qc - self.joint_lower_limits) / (self.joint_upper_limits - self.joint_lower_limits) - 1.,
-            np.zeros(len(self.joint_names))
-        ])
-        qc, qcdot = output[:len(self.joint_names)], output[len(self.joint_names):]
+        self.qcdot = J_inv @ desired - N @ (2. * (self.qc - self.joint_lower_limits) / (self.joint_upper_limits - self.joint_lower_limits) - 1.)
+        self.qc += dt * self.qcdot
 
-        self.qc = qc
-        self.qcdot = qcdot
-
-        return qc, qcdot
+        return self.qc, self.qcdot

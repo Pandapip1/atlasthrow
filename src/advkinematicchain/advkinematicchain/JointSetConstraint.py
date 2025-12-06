@@ -4,22 +4,19 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class JointSetConstraint(IKinConstraint):
-    def __init__(self, name, chain, link):
+    def __init__(self, name, chain, link, lam=1.0):
         super().__init__(name, chain)
         self.link = link
         self.qc = self.chain.qc[self.chain.joint_names.index(self.link)]
+        self.lam = 1.0
 
     def getRowTargets(self, dt):
-        return np.array([ self.qc ])
-
-    def getPositionCoeffs(self, dt):
-        if dt == 0:
-            return np.zeros(1)
-
-        return np.where(np.arange(len(self.chain.joint_names)) == self.chain.joint_names.index(self.link), 1, 0).reshape((1, len(self.chain.joint_names)))
+        return np.array([ self.qc - self.chain.qc[self.chain.joint_names.index(self.link)] ])
 
     def getVelocityCoeffs(self, dt):
-        return np.zeros((1, len(self.chain.joint_names)))
+        qc = self.chain.qc
+
+        return np.where(np.arange(len(self.chain.joint_names)) == self.chain.joint_names.index(self.link), 1, 0).reshape((1, len(self.chain.joint_names)))
     
     def getJointPosition(self):
         return self.qc

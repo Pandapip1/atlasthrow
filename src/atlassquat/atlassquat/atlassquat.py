@@ -74,7 +74,7 @@ class TrajectoryNode(Node):
             "back_bky": -0.5,
         }
 
-        self.chain = AdvancedKinematicChain(self, q0, {})
+        self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.15)
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, "back_bkz")
