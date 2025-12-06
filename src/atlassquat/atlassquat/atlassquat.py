@@ -67,15 +67,17 @@ class TrajectoryNode(Node):
         # Set up the kinematic chain object.
         q0 = {
             # Slight bias to correct side of singularity for squat purposes
-            "l_leg_hpy": -0.2,
-            "r_leg_hpy": -0.2,
-            "l_leg_kny": 0.2,
-            "r_leg_kny": 0.2,
-            "back_bky": -0.5,
+            "l_leg_hpy": -0.3,
+            "r_leg_hpy": -0.3,
+            "l_leg_kny": 0.6,
+            "r_leg_kny": 0.6,
+            "l_leg_aky": -0.3,
+            "r_leg_aky": -0.3,
+            # "back_bky": -0.5,
             "r_arm_ely": -0.2,
         }
 
-        self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.15)
+        self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.5)
         self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, [ "back_bkz" ])
@@ -201,7 +203,7 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
-        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootConstraint, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow) # joint configuration at end of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):

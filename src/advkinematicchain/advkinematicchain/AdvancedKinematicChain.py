@@ -193,14 +193,14 @@ class AdvancedKinematicChain():
         self.joint_lower_limits = np.array([ joint.limit.lower for joint in joints ])
         self.joint_upper_limits = np.array([ joint.limit.upper for joint in joints ])
 
-        self.qc = [
+        self.qc = np.array([
             q0[joint_name] if joint_name in q0 else 0.
             for joint_name in self.joint_names
-        ]
-        self.qcdot = [
+        ])
+        self.qcdot = np.array([
             q0dot[joint_name] if joint_name in q0dot else 0.
             for joint_name in self.joint_names
-        ]
+        ])
 
         # Traverse the joints
         self.link_traversal = {}
@@ -335,20 +335,18 @@ class AdvancedKinematicChain():
         self.constraints.clear()
     
     def ikin(self, dt):
-        desired = np.concatenate([
-            constraint.getRowTargets(dt)
-            for constraint in self.constraints
-        ])
-        J = np.vstack([
-            constraint.getVelocityCoeffs(dt) for constraint in self.constraints
-        ])
-        J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
-            np.arange(J.shape[0]) < len(desired) - len(self.qc),
-            self.gamma**2,
-            0.0
-        )))
-        N = np.eye(J_inv.shape[0]) - J_inv @ J
-        self.qcdot = J_inv @ desired - N @ (2. * (self.qc - self.joint_lower_limits) / (self.joint_upper_limits - self.joint_lower_limits) - 1.)
-        self.qc += dt * self.qcdot
+        N = np.eye(len(self.qc))
+        qcdot = np.zeros(len(self.qc))
+        for constraint in self.constraints:
+            desired = constraint.getRowTargets(dt)
+            J = constraint.getVelocityCoeffs(dt)
+            J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
+                np.arange(J.shape[0]) < len(desired) - len(self.qc),
+                self.gamma**2,
+                0.0
+            )))
+            qcdot += N @ J_inv @ desired
+            N -= J_inv @ J
 
+        self.qc += dt * qcdot
         return self.qc, self.qcdot
