@@ -328,7 +328,7 @@ class AdvancedKinematicChain():
         c = 0.5
         
         if q_init is None:
-            q_init = np.zeros(len(self.chain.joint_names))
+            q_init = np.zeros(len(self.joint_names))
         
         qc = q_init
 
@@ -356,6 +356,14 @@ class AdvancedKinematicChain():
             ...
 
         return qc, qcdot # qcdot will be none if vd and wd are None
+
+    def get_jointnames(self, initial_link, final_link):
+        names = []
+
+        for link in self.link_traversal[initial_link][final_link]:
+            names.append(link.name)
+        
+        return names
     
     def add_constraint(self, constraint):
         self.constraints.append(constraint)

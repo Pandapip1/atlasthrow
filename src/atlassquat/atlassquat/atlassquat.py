@@ -84,10 +84,10 @@ class TrajectoryNode(Node):
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
-        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.joint_names)
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.leftFootLink, self.rightHandLink))
 
-        self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.leftHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.rightFootLink, self.rightHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.leftFootLink, self.leftHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
@@ -181,6 +181,8 @@ class TrajectoryNode(Node):
         self.timer = self.create_timer(self.dt, self.update)
         self.get_logger().info("Running with dt of %f seconds (%fHz)" %
                                (self.dt, 1/self.dt))
+
+        self.chain.get_jointnames(self.leftFootLink, self.rightHandLink)
     
         
     
@@ -315,7 +317,7 @@ class TrajectoryNode(Node):
         Rdfeet = np.vstack((RdL, RdR))
         vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
         wdfeet = np.concatenate((vzero(), vzero()))
-
+        
         self.fullBodyConstraint.setJointPositions(qcThrow)
         self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
 
@@ -324,8 +326,8 @@ class TrajectoryNode(Node):
         self.rightFootConstraint.setDesiredPosition(pdRightFoot)
         self.rightFootConstraint.setDesiredVelocity(vdRightFoot)
 
-        self.rightHandConstraint.setDesiredPosition(pdRightHand) # uncomment if joint spline doesn't work
-        self.rightHandConstraint.setDesiredVelocity(vdRightHand)
+        #self.rightHandConstraint.setDesiredPosition(pdRightHand) # uncomment if joint spline doesn't work
+        #self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
             
 
