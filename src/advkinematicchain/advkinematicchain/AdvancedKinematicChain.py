@@ -333,21 +333,21 @@ class AdvancedKinematicChain():
         qc = q_init
 
         # Newton-Raphson to figure out inverse kinematics
-        if(pd is not None):
-            while(e_p >= threshold_p):
+        if pd is not None:
+            while np.linalg.norm(e_p) >= threshold_p:
                 (pc, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
 
                 e_p = ep(pd, pc)
-                qc = qc + c * np.linalg.pinv(Jv) * e_p
+                qc = qc + c * np.linalg.pinv(Jv) @ e_p
 
-        if(Rd is not None):
-            while(e_R >= threshold_R):
+        if Rd is not None:
+            while np.linalg.norm(e_R) >= threshold_R:
                 (_, _, Rc, Jw) = chain.relative_fkin(qc, initial_link, final_link) 
 
                 e_R = eR(Rd, Rc)
-                qc = qc + c * np.linalg.pinv(Jw) * e_R
+                qc = qc + c * np.linalg.pinv(Jw) @ e_R
 
-        qcdot = np.zeros(len(self.chain.joint_names))
+        qcdot = np.zeros(len(self.joint_names))
             
         if(vd is not None):
             (_, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
