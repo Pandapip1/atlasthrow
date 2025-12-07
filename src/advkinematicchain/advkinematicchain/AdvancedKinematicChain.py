@@ -317,12 +317,44 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None):
+    def relative_ikin(self, chain, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None):
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
         
-        qc = np.zeros(len(self.qc))
-        qcdot = np.zeros(len(self.qc))
+        threshold_p = 1e-5
+        threshold_R = 1e-5
+        e_p = np.inf
+        e_R = np.inf
+        c = 0.5
+        
+        if q_init is None:
+            q_init = np.zeros(len(self.chain.joint_names))
+        
+        qc = q_init
+
+        # Newton-Raphson to figure out inverse kinematics
+        if(pd is not None):
+            while(e_p >= threshold_p):
+                (pc, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
+
+                e_p = ep(pd, pc)
+                qc = qc + c * np.linalg.pinv(Jsv) * e_p
+
+        if(Rd is not None):
+            while(e_R >= threshold_R):
+                (_, _, Rc, Jw) = chain.relative_fkin(qc, initial_link, final_link) 
+
+                e_R = eR(Rd, Rc)
+                qc = qc + c * np.linalg.pinv(Jw) * e_R
+
+        qcdot = np.zeros(len(self.chain.joint_names))
+            
+        if(vd is not None):
+            (_, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
+            qcdot = np.linalg.pinv(Jv) @ vd
+        elif(wd is not None):
+            ...
+
         return qc, qcdot # qcdot will be none if vd and wd are None
     
     def add_constraint(self, constraint):
