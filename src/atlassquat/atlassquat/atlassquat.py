@@ -392,9 +392,11 @@ class TrajectoryNode(Node):
         self.pubtwist.publish(TwistStamped(
             header=header,
             twist=Twist_from_vw(vdfeet, wdfeet)))
+
+        header=Header(stamp=self.now.to_msg(), frame_id='l_foot')
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
-            child_frame_id='pelvis',
+            child_frame_id='world',
             transform=Transform_from_Rp(np.eye(3), np.zeros(3))))
 
         sys.stdout.flush()
