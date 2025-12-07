@@ -182,6 +182,8 @@ class TrajectoryNode(Node):
         self.get_logger().info("Running with dt of %f seconds (%fHz)" %
                                (self.dt, 1/self.dt))
     
+        
+    
     # Compute the final thro position and velocity
     def compute_throw_end(self, target_pos):
         xp, yp, zp = target_pos
@@ -392,8 +394,8 @@ class TrajectoryNode(Node):
             twist=Twist_from_vw(vdfeet, wdfeet)))
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
-            child_frame_id='desired',
-            transform=Transform_from_Rp(RdL,pdRightHand)))
+            child_frame_id='pelvis',
+            transform=Transform_from_Rp(np.eye(3), np.zeros(3))))
 
         sys.stdout.flush()
         sys.stderr.flush()
