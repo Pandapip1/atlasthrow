@@ -338,7 +338,7 @@ class AdvancedKinematicChain():
                 (pc, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
 
                 e_p = ep(pd, pc)
-                qc = qc + c * np.linalg.pinv(Jsv) * e_p
+                qc = qc + c * np.linalg.pinv(Jv) * e_p
 
         if(Rd is not None):
             while(e_R >= threshold_R):
