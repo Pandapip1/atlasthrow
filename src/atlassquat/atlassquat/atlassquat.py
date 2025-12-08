@@ -382,27 +382,25 @@ class TrajectoryNode(Node):
         self.target_marker.pose.position.z = float(self.target_position[2])
         self.pubtarget.publish(self.target_marker)  
 
-        header=Header(stamp=self.now.to_msg(), frame_id='world')
-
-        self.pubjoint.publish(JointState(
-            header=header,
-            name=self.chain.joint_names,
-            position=qc.tolist(),
-            velocity=qcdot.tolist()))
-        self.pubpose.publish(PoseStamped(
-            header=header,
-            pose=Pose_from_Rp(RdL, pdRightHand)))
-        self.pubtwist.publish(TwistStamped(
-            header=header,
-            twist=Twist_from_vw(vdfeet, wdfeet)))
+        # self.pubjoint.publish(JointState(
+        #     header=header,
+        #     name=self.chain.joint_names,
+        #     position=qc.tolist(),
+        #     velocity=qcdot.tolist()))
+        # self.pubpose.publish(PoseStamped(
+        #     header=header,
+        #     pose=Pose_from_Rp(RdL, pdRightHand)))
+        # self.pubtwist.publish(TwistStamped(
+        #     header=header,
+        #     twist=Twist_from_vw(vdfeet, wdfeet)))
 
         (ppelvis, Rpelvis, _, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
-        print(f"ahh: {Transform_from_Rp(Rpelvis,ppelvis)}")
 
+        header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
             child_frame_id='pelvis',
-            transform=Transform_from_Rp(pzero(), Reye())))
+            transform=Transform_from_Rp(Rpelvis,ppelvis)))
 
         sys.stdout.flush()
         sys.stderr.flush()
