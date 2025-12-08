@@ -73,58 +73,32 @@ class TrajectoryNode(Node):
             "r_leg_kny": 0.6,
             "l_leg_aky": -0.3,
             "r_leg_aky": -0.3,
-            # "back_bky": -0.5,
             "r_arm_ely": -0.2,
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.5)
-        self.leftFootConstraint = LinkPoseConstraint("leftFootPosition", self.chain, self.leftFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.torsoAngleConstraint = JointSetConstraint("torsoAngleConstraint", self.chain, [ "back_bkz" ])
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.joint_names) #self.chain.get_jointnames(self.leftFootLink, self.rightHandLink)
-
-        self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.rightFootLink, self.rightHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.leftFootLink, self.leftHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
         self.chain.add_constraint(self.footingConstraint2)
         self.chain.add_constraint(self.balancingConstraint)
 
-        # self.chain.add_constraint(self.leftFootConstraint)
-        # self.chain.add_constraint(self.rightFootConstraint)
-        # self.chain.add_constraint(self.torsoAngleConstraint)
-        # self.chain.add_constraint(self.leftHandConstraint)
-        # self.chain.add_constraint(self.rightHandConstraint)
         self.chain.add_constraint(self.fullBodyConstraint)
 
         self.jointnames = self.chain.joint_names
 
         # Define the matching initial joint/task positions.
         self.q0 = np.array(self.chain.qc)
-
-        (pL0, RL0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftFootLink)
-        (pR0, RR0, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightFootLink)
         
         (pRH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightHandLink)
         self.pRH0 = pRH0
 
         (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
         self.pLH0 = pLH0
-
-        squat_height = 0.15
-
-        # Define the other points.
-        self.leftFootUp = pL0.copy()
-        self.leftFootUp[2] += squat_height
-        self.leftFootDown = pL0.copy()
-        
-        self.rightFootUp = pR0.copy()
-        self.rightFootUp[2] += squat_height
-        self.rightFootDown = pR0.copy()
 
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
@@ -284,24 +258,6 @@ class TrajectoryNode(Node):
         tThrow = self.periodThrow / 2.
         tReturn = self.periodThrow
 
-        offset = np.array([0., 0., 0.])
-        if t1 < self.period / 2:
-            # going up->down
-            (s, sdot) = goto(t1, self.period/2, 0., 1.)
-
-            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
-            vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
-            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
-            vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
-        else:
-            # going down->up
-            (s, sdot) = goto(t1 - self.period/2, self.period/2, 1., 0.) 
-
-            pdLeftFoot = self.leftFootDown + (self.leftFootUp - self.leftFootDown) * s + offset
-            vdLeftFoot = (self.leftFootUp - self.leftFootDown) * sdot
-            pdRightFoot = self.rightFootDown + (self.rightFootUp - self.rightFootDown) * s + offset
-            vdRightFoot = (self.rightFootUp - self.rightFootDown) * sdot
-
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
@@ -311,32 +267,8 @@ class TrajectoryNode(Node):
 
             (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
 
-        RdL = Reye()
-        RdR = Reye()
-        pdfeet = np.concatenate((pdLeftFoot, pdRightFoot)) # target x, y, z coordinates of left + right feet
-        Rdfeet = np.vstack((RdL, RdR))
-        vdfeet = np.concatenate((vdLeftFoot, vdRightFoot)) # target x,
-        wdfeet = np.concatenate((vzero(), vzero()))
-        
         self.fullBodyConstraint.setJointPositions(qcThrow)
         self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
-
-        self.leftFootConstraint.setDesiredPosition(pdLeftFoot)
-        self.leftFootConstraint.setDesiredVelocity(vdLeftFoot)
-        self.rightFootConstraint.setDesiredPosition(pdRightFoot)
-        self.rightFootConstraint.setDesiredVelocity(vdRightFoot)
-
-        #self.rightHandConstraint.setDesiredPosition(pdRightHand) # uncomment if joint spline doesn't work
-        #self.rightHandConstraint.setDesiredVelocity(vdRightHand)
-
-            
-
-        #self.leftHandConstraint.setDesiredPosition(pdLeftHand)
-        #self.leftHandConstraint.setDesiredVelocity(vdLeftHand)
-
-        # self.torsoAngleConstraint.setJointPosition(wzdTorso)
-
-        # self.rightElbowAngleConstraint.setJointPosition(0)
 
         qc, qcdot = self.chain.ikin(self.dt)
 
@@ -390,10 +322,10 @@ class TrajectoryNode(Node):
             velocity=qcdot.tolist()))
         self.pubpose.publish(PoseStamped(
             header=header,
-            pose=Pose_from_Rp(RdL, pdRightHand)))
+            pose=Pose_from_Rp(np.eye(3), pdRightHand)))
         self.pubtwist.publish(TwistStamped(
             header=header,
-            twist=Twist_from_vw(vdfeet, wdfeet)))
+            twist=Twist_from_vw(vdRightHand, np.zeros(3))))
 
         (ppelvis, Rpelvis, _, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
 
