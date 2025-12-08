@@ -63,6 +63,7 @@ class TrajectoryNode(Node):
         self.rightFootLink = "r_foot"
         self.leftHandLink = "l_hand"
         self.rightHandLink = "r_hand"
+        self.rightShoulderLink = "r_scap"
 
         # Set up the kinematic chain object.
         q0 = {
@@ -80,7 +81,7 @@ class TrajectoryNode(Node):
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]), lam=0.1)
-        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames("r_scap", self.rightHandLink)) 
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)) 
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
@@ -181,7 +182,7 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
-        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.q0) # joint configuration at end of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -277,6 +278,7 @@ class TrajectoryNode(Node):
         self.fullBodyConstraint.setJointVelocitys([qcdotThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
 
         qc, qcdot = self.chain.ikin(self.dt)
+        self.qc = qc
 
         # Release ball
         readyToThrow = t2 >= tThrow
