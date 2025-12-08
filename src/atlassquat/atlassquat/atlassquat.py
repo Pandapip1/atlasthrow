@@ -17,7 +17,7 @@ import numpy as np
 import tf2_ros
 import sys
 
-from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp
+from math               import pi, sin, cos, acos, atan2, sqrt, fmod, exp, floor
 
 from asyncio            import Future
 from rclpy.node         import Node
@@ -77,15 +77,15 @@ class TrajectoryNode(Node):
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.5)
-        self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
-        self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
-        self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
-        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.leftFootLink, self.rightHandLink)) 
+        self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
+        self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
+        self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]), lam=0.1)
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames("r_scap", self.rightHandLink)) 
 
         # Balancing
-        # self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
-        # self.chain.add_constraint(self.balancingConstraint)
+        self.chain.add_constraint(self.balancingConstraint)
 
         self.chain.add_constraint(self.fullBodyConstraint)
 
@@ -181,7 +181,7 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
-        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.chain, self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.q0) # joint configuration at end of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.q0) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -258,17 +258,19 @@ class TrajectoryNode(Node):
         tThrow = self.periodThrow / 2.
         tReturn = self.periodThrow
 
-        if t2 < tThrow:
-            # recalculate_ikin_every_sec = 1
-            # if (self.t // self.dt) % (recalculate_ikin_every_sec // self.dt) == 0:
-            #     (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.chain, self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
+        # recalculate_ikin_every_sec = 1
+        # if floor(self.t // self.dt) % floor(recalculate_ikin_every_sec // self.dt) == 0:
+        #     (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
 
+        if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
+            # (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
             (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
+            # (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
             (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
 
         self.fullBodyConstraint.setJointPositions([qcThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])

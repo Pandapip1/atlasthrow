@@ -317,10 +317,14 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, chain, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None):
+    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None):
+        chain = self
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
         
+        if movable_joints is None:
+            movable_joints = self.joint_names
+
         threshold_p = 1e-1
         threshold_R = 1e-1
         e_p = np.inf
