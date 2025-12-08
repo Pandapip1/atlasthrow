@@ -267,8 +267,8 @@ class TrajectoryNode(Node):
 
             (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
 
-        self.fullBodyConstraint.setJointPositions(qcThrow)
-        self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
+        self.fullBodyConstraint.setJointPositions([qcThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
+        self.fullBodyConstraint.setJointVelocitys([qcdotThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
 
         qc, qcdot = self.chain.ikin(self.dt)
 

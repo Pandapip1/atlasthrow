@@ -36,6 +36,9 @@ class JointSetConstraint(IKinConstraint):
         return self.qc
 
     def setJointPositions(self, qc):
+        if len(qc) != len(self.joints):
+            raise Exception(f"Setting {len(qc)} joints but expected {len(self.joints)}")
+
         old = self.qc
         self.qc = qc
         return old
