@@ -321,8 +321,8 @@ class AdvancedKinematicChain():
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
         
-        threshold_p = 1e-5
-        threshold_R = 1e-5
+        threshold_p = 1e-1
+        threshold_R = 1e-1
         e_p = np.inf
         e_R = np.inf
         c = 0.5
