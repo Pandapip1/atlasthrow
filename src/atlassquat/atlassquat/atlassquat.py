@@ -376,7 +376,7 @@ class TrajectoryNode(Node):
         self.pubballmarker.publish(self.ball_marker)
 
         self.ball_collision(ball_point)
-
+        
         self.target_marker.header.stamp = self.get_clock().now().to_msg()
         self.target_marker.pose.position.x = float(self.target_position[0])
         self.target_marker.pose.position.y = float(self.target_position[1])
@@ -395,10 +395,10 @@ class TrajectoryNode(Node):
             header=header,
             twist=Twist_from_vw(vdfeet, wdfeet)))
 
-        header=Header(stamp=self.now.to_msg(), frame_id='l_foot')
+        header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
-            child_frame_id='world',
+            child_frame_id='l_foot',
             transform=Transform_from_Rp(np.eye(3), np.zeros(3))))
 
         sys.stdout.flush()
