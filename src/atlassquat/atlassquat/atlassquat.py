@@ -364,8 +364,6 @@ class TrajectoryNode(Node):
         #  pd and Rd    = Task pos/orient as  /pose & TF     to view/plot
         #  vd and wd    = Task velocities as  /twist         to      plot
 
-        header=Header(stamp=self.now.to_msg(), frame_id='world')
-
         ball_point = Point()
         ball_point.x = float(self.ball_position[0])
         ball_point.y = float(self.ball_position[1])
@@ -382,7 +380,9 @@ class TrajectoryNode(Node):
         self.target_marker.pose.position.x = float(self.target_position[0])
         self.target_marker.pose.position.y = float(self.target_position[1])
         self.target_marker.pose.position.z = float(self.target_position[2])
-        self.pubtarget.publish(self.target_marker)
+        self.pubtarget.publish(self.target_marker)  
+
+        header=Header(stamp=self.now.to_msg(), frame_id='world')
 
         self.pubjoint.publish(JointState(
             header=header,
@@ -396,7 +396,7 @@ class TrajectoryNode(Node):
             header=header,
             twist=Twist_from_vw(vdfeet, wdfeet)))
 
-        (ppelvis, Rpelvis, _, _) = chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
+        (ppelvis, Rpelvis, _, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
         print(f"ahh: {Transform_from_Rp(Rpelvis,ppelvis)}")
 
         self.tfbroad.sendTransform(TransformStamped(
