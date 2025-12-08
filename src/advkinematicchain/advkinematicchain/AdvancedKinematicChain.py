@@ -347,6 +347,8 @@ class AdvancedKinematicChain():
                 e_R = eR(Rd, Rc)
                 qc = qc + c * np.linalg.pinv(Jw) @ e_R
 
+        qc = qc % (2 * np.pi)
+
         qcdot = np.zeros(len(self.joint_names))
             
         if(vd is not None):
