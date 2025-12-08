@@ -20,6 +20,8 @@ class JointSetConstraint(IKinConstraint):
             for joint in self.joints
         ])
 
+        print(f"self.qc: {self.qc}\n qlast: {qlast}")
+
         return (self.qc - qlast) * self.lam + self.qcdot
 
     def getVelocityCoeffs(self, dt):

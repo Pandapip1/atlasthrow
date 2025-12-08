@@ -84,7 +84,7 @@ class TrajectoryNode(Node):
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]))
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]))
-        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.leftFootLink, self.rightHandLink))
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.joint_names) #self.chain.get_jointnames(self.leftFootLink, self.rightHandLink)
 
         self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.rightFootLink, self.rightHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.leftFootLink, self.leftHandLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
@@ -363,6 +363,7 @@ class TrajectoryNode(Node):
         #  qc and qcdot = Joint Commands  as  /joint_states  to view/plot
         #  pd and Rd    = Task pos/orient as  /pose & TF     to view/plot
         #  vd and wd    = Task velocities as  /twist         to      plot
+
         header=Header(stamp=self.now.to_msg(), frame_id='world')
 
         ball_point = Point()
@@ -395,11 +396,13 @@ class TrajectoryNode(Node):
             header=header,
             twist=Twist_from_vw(vdfeet, wdfeet)))
 
-        header=Header(stamp=self.now.to_msg(), frame_id='world')
+        (ppelvis, Rpelvis, _, _) = chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
+        print(f"ahh: {Transform_from_Rp(Rpelvis,ppelvis)}")
+
         self.tfbroad.sendTransform(TransformStamped(
             header=header,
-            child_frame_id='l_foot',
-            transform=Transform_from_Rp(np.eye(3), np.zeros(3))))
+            child_frame_id='pelvis',
+            transform=Transform_from_Rp(pzero(), Reye())))
 
         sys.stdout.flush()
         sys.stderr.flush()
