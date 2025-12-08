@@ -265,11 +265,11 @@ class TrajectoryNode(Node):
 
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
-            (qcThrow, qcdotThrow) = spline(dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
+            (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
-            (qcThrow, qcdotThrow) = spline(dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
+            (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
 
         self.fullBodyConstraint.setJointPositions([qcThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
         self.fullBodyConstraint.setJointVelocitys([qcdotThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
