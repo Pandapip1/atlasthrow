@@ -259,6 +259,8 @@ class TrajectoryNode(Node):
         tReturn = self.periodThrow
 
         if t2 < tThrow:
+            (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.chain, self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
+
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
             (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
