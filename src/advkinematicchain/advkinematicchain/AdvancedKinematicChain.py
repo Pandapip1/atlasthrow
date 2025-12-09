@@ -325,8 +325,8 @@ class AdvancedKinematicChain():
         if movable_joints is None:
             movable_joints = self.joint_names
 
-        threshold_p = 1e-1
-        threshold_R = 1e-1
+        threshold_p = 1e-3
+        threshold_R = 1e-3
         e_p = np.inf
         e_R = np.inf
         c = 0.5
