@@ -84,9 +84,9 @@ class TrajectoryNode(Node):
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)) 
 
         # Balancing
-        # self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
-        # self.chain.add_constraint(self.balancingConstraint)
+        self.chain.add_constraint(self.balancingConstraint)
 
         self.chain.add_constraint(self.fullBodyConstraint)
 
