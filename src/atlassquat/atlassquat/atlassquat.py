@@ -183,6 +183,7 @@ class TrajectoryNode(Node):
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
         (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
+        # (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -247,6 +248,7 @@ class TrajectoryNode(Node):
 
     # Update - send a new joint command every time step.
     def update(self):
+        print("upd")
         # Increment time.  We do so explicitly to avoid system jitter.
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)

@@ -336,27 +336,37 @@ class AdvancedKinematicChain():
         
         qc = q_init
 
+        inv_mask = [self.joint_names.index(joint) for joint in (set(self.joint_names) - set(movable_joints)) ]
+        mask = [self.joint_names.index(joint) for joint in movable_joints ]
+
         # Newton-Raphson to figure out inverse kinematics
+        pclast = pd
         if pd is not None:
             while np.linalg.norm(e_p) >= threshold_p:
-                (pc, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
+                (pc, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link)
 
-                e_p = ep(pd, pc)
+                Jv[:, inv_mask] = 0
+
+                e_p = ep(pclast, pc)
                 qc = qc + c * np.linalg.pinv(Jv) @ e_p
+                pclast = pc
 
+        Rclast = Rd
         if Rd is not None:
             while np.linalg.norm(e_R) >= threshold_R:
-                (_, _, Rc, Jw) = chain.relative_fkin(qc, initial_link, final_link) 
+                (_, _, Rc, Jw) = chain.relative_fkin(qc, initial_link, final_link)
 
-                e_R = eR(Rd, Rc)
+                Jw[:, inv_mask] = 0
+
+                e_R = eR(Rclast, Rc)
                 qc = qc + c * np.linalg.pinv(Jw) @ e_R
-
-        qc = qc % (2 * np.pi)
+                Rclast = Rc
 
         qcdot = np.zeros(len(self.joint_names))
             
         if(vd is not None):
             (_, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
+            Jv[:, inv_mask] = 0
             qcdot = np.linalg.pinv(Jv) @ vd
         elif(wd is not None):
             ...
@@ -386,11 +396,7 @@ class AdvancedKinematicChain():
         for constraint in self.constraints:
             desired = constraint.getRowTargets(dt)
             J = constraint.getVelocityCoeffs(dt)
-            J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(np.where(
-                np.arange(J.shape[0]) < len(desired) - len(self.qc),
-                self.gamma**2,
-                0.0
-            )))
+            J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(self.gamma**2 * np.ones(J.shape[0])))
             qcdot += N @ J_inv @ desired
             N -= J_inv @ J
 
