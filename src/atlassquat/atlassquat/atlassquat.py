@@ -84,9 +84,9 @@ class TrajectoryNode(Node):
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)) 
 
         # Balancing
-        self.chain.add_constraint(self.footingConstraint1)
+        # self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
-        self.chain.add_constraint(self.balancingConstraint)
+        # self.chain.add_constraint(self.balancingConstraint)
 
         self.chain.add_constraint(self.fullBodyConstraint)
 
@@ -267,13 +267,13 @@ class TrajectoryNode(Node):
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
-            # (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
-            (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
+            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
+            # (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
-            # (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
-            (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
+            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
+            # (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
 
         self.fullBodyConstraint.setJointPositions([qcThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
         self.fullBodyConstraint.setJointVelocitys([qcdotThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])

@@ -370,6 +370,8 @@ class AdvancedKinematicChain():
             qcdot = np.linalg.pinv(Jv) @ vd
         elif(wd is not None):
             ...
+        
+        qc = qc % (2 * np.pi) # TODO: Handle prismatic
 
         return qc, qcdot # qcdot will be none if vd and wd are None
 
