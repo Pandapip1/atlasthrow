@@ -248,7 +248,6 @@ class TrajectoryNode(Node):
 
     # Update - send a new joint command every time step.
     def update(self):
-        print("upd")
         # Increment time.  We do so explicitly to avoid system jitter.
         self.t   = self.t   + self.dt
         self.now = self.now + rclpy.time.Duration(seconds=self.dt)
