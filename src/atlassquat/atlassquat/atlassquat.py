@@ -63,7 +63,7 @@ class TrajectoryNode(Node):
         self.rightFootLink = "r_foot"
         self.leftHandLink = "l_hand"
         self.rightHandLink = "r_hand"
-        self.rightShoulderLink = "r_scap"
+        self.rightShoulderLink = "pelvis"
 
         # Set up the kinematic chain object.
         q0 = {
@@ -182,8 +182,8 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"vRHThrow: {self.vRHThrow}")
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
-        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
-        # (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
+        # (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -264,19 +264,21 @@ class TrajectoryNode(Node):
         # if floor(self.t // self.dt) % floor(recalculate_ikin_every_sec // self.dt) == 0:
         #     (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
 
+        mask = [self.jointnames.index(joint) for joint in self.fullBodyConstraint.joints ]
+
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
-            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow, self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
+            (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow[mask], self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
             # (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
-            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qFinThrow, self.qInitThrow,  self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
+            (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qInitThrow[mask], self.qInitThrow[mask], self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
             # (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
 
-        self.fullBodyConstraint.setJointPositions([qcThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
-        self.fullBodyConstraint.setJointVelocitys([qcdotThrow[self.jointnames.index(joint)] for joint in self.fullBodyConstraint.joints])
+        self.fullBodyConstraint.setJointPositions(qcThrow)
+        self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
 
         qc, qcdot = self.chain.ikin(self.dt)
         self.qc = qc

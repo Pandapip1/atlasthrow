@@ -317,7 +317,7 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None):
+    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=0.005):
         chain = self
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
@@ -329,7 +329,7 @@ class AdvancedKinematicChain():
         threshold_R = 1e-3
         e_p = np.inf
         e_R = np.inf
-        c = 0.5
+        c = gamma
         
         if q_init is None:
             q_init = np.zeros(len(self.joint_names))
@@ -371,9 +371,9 @@ class AdvancedKinematicChain():
         elif(wd is not None):
             ...
         
-        qc = qc % (2 * np.pi) # TODO: Handle prismatic
+        # qc = qc % (2 * np.pi) # TODO: Handle prismatic
 
-        return qc, qcdot # qcdot will be none if vd and wd are None
+        return qc[mask], qcdot[mask] # qcdot will be none if vd and wd are None
 
     def get_jointnames(self, initial_link, final_link):
         names = []
