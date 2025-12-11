@@ -119,9 +119,9 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
-        self.balltime = 1.2 # How long the throw takes
+        self.balltime = 3 # How long the throw takes
         self.throw_offset = 0.3 # how far away from target to throw just dummy
-        self.release_height = 0.5 # dummy can tune later
+        self.release_height = 1 # dummy can tune later
 
 
         #Target and ball code
@@ -173,11 +173,9 @@ class TrajectoryNode(Node):
         self.get_logger().info(f"throw_direction: {self.throw_direction}")
 
         (pShoulder, _, _, _) = self.chain.relative_fkin(self.qc, self.leftFootLink, 'utorso')
-        xhand = xp - self.throw_offset * cos(self.throw_direction)
-        #pShoulder[0] + self.throw_offset * np.cos(self.throw_direction)
+        xhand = pShoulder[0] + self.throw_offset * np.cos(self.throw_direction)
         #
-        yhand = yp - self.throw_offset * sin(self.throw_direction)
-        #pShoulder[1] + self.throw_offset * np.sin(self.throw_direction)
+        yhand = pShoulder[1] + self.throw_offset * np.sin(self.throw_direction)
         
         zhand = self.release_height
 
