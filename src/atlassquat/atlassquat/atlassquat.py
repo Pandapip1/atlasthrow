@@ -184,9 +184,7 @@ class TrajectoryNode(Node):
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
         # (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
-        (self.qFinThrow, self.qdotFinThrow, perror, verror) = self.chain.relative_ikin(self.worldFrameLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
-        print(f"perror: {perror}")
-        print(f"verror: {verror}")
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.worldFrameLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):

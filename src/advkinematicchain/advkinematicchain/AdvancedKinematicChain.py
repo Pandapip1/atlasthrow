@@ -28,6 +28,7 @@ from rclpy.node                 import Node
 from rclpy.qos                  import QoSProfile, DurabilityPolicy
 from std_msgs.msg               import String
 from urdf_parser_py.urdf        import Robot
+import warnings
 
 # Grab the Utilities
 from utils.TransformHelpers     import *
@@ -317,7 +318,7 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, initial_link, final_link, final_link_sec=None, pd = None, pd_sec=None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=5e-6, threshold_p = 1e-4, threshold_R = 1e-4):
+    def relative_ikin(self, initial_link, final_link, final_link_sec=None, pd = None, pd_sec=None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=3e-3, threshold_p = 1e-4, threshold_R = 1e-4):
         chain = self
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
@@ -385,7 +386,12 @@ class AdvancedKinematicChain():
         perror = pa - pd
         verror = Jva @ qcdot - vd
 
-        return qc[mask], qcdot[mask], perror, verror # qcdot will be none if vd and wd are None
+        if np.linalg.norm(perror) >= 0.1:
+            warnings.warn(f"position off by {perror}")
+        if np.linalg.norm(verror) >= 0.1:
+            warnings.warn(f"velocity off by {verror}")
+
+        return qc[mask], qcdot[mask] # qcdot will be none if vd and wd are None
 
     def get_jointnames(self, initial_link, final_link):
         names = []
