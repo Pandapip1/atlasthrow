@@ -65,7 +65,7 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
         self.rightShoulderLink = "pelvis"
         self.worldFrameLink = "l_foot"
-        self.throwExcludeJoints = ["back_bky", "back_bkx"]
+        self.throwExcludeJoints = []
 
         # Set up the kinematic chain object.
         q0 = {
@@ -89,9 +89,9 @@ class TrajectoryNode(Node):
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
-        # self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
-        # self.chain.add_constraint(self.balancingConstraint)
+        self.chain.add_constraint(self.balancingConstraint)
 
         #self.chain.add_constraint(self.fullBodyConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
@@ -119,14 +119,14 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
-        self.balltime = 3 # How long the throw takes
+        self.balltime = 2.5 # How long the throw takes
         self.throw_offset = 0.3 # how far away from target to throw just dummy
-        self.release_height = 1 # dummy can tune later
+        self.release_height = 0.5 # dummy can tune later
 
 
         #Target and ball code
-        self.target_radius = 0.20   # 20 cm sphere
-        self.ball_radius = 0.20   # 20 cm sphere
+        self.target_radius = 0.26  # 26 cm sphere
+        self.ball_radius = 0.12    # 12 cm sphere
         self.xy_bounds = [0.6, 2]  # x, y limits can change just dummy values
         self.z_bounds = [0.6, 2]  # z limit can change just dummy values
 
@@ -222,9 +222,9 @@ class TrajectoryNode(Node):
         self.ball_marker.header.frame_id = "world"
         self.ball_marker.type = Marker.SPHERE
         self.ball_marker.action = Marker.ADD
-        self.ball_marker.scale.x = self.ball_radius
-        self.ball_marker.scale.y = self.ball_radius
-        self.ball_marker.scale.z = self.ball_radius
+        self.ball_marker.scale.x = 2 * self.ball_radius
+        self.ball_marker.scale.y = 2 * self.ball_radius
+        self.ball_marker.scale.z = 2 * self.ball_radius
         self.ball_marker.color.r = 0.1
         self.ball_marker.color.g = 0.8
         self.ball_marker.color.b = 0.1
@@ -240,7 +240,7 @@ class TrajectoryNode(Node):
         ball_pos = np.array([ball_point.x, ball_point.y, ball_point.z])
         dist = np.linalg.norm(ball_pos - self.target_position)
 
-        if dist <= self.target_radius:
+        if dist <= self.target_radius + self.ball_radius:
             if not self.target_hit or self.timesincerelease > self.balltime + 1:
                 self.target_hit = True
                 self.get_logger().info("TARGET HIT! Respawning...")
