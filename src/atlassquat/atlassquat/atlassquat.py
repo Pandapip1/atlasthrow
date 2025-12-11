@@ -86,12 +86,15 @@ class TrajectoryNode(Node):
         self.throwJoints = list(filter(lambda x: x is not None, [i if i not in self.throwExcludeJoints else None for i in self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)]))
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.throwJoints) 
 
+        self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+
         # Balancing
         # self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
         # self.chain.add_constraint(self.balancingConstraint)
 
-        self.chain.add_constraint(self.fullBodyConstraint)
+        #self.chain.add_constraint(self.fullBodyConstraint)
+        self.chain.add_constraint(self.rightHandConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -117,7 +120,7 @@ class TrajectoryNode(Node):
         self.periodThrow = 6.0
 
         self.balltime = 1.2 # How long the throw takes
-        self.throw_offset = 1.3 # how far away from target to throw just dummy
+        self.throw_offset = 0.3 # how far away from target to throw just dummy
         self.release_height = 0.5 # dummy can tune later
 
 
@@ -169,8 +172,13 @@ class TrajectoryNode(Node):
         self.throw_direction = atan2(yp, xp)
         self.get_logger().info(f"throw_direction: {self.throw_direction}")
 
+        (pShoulder, _, _, _) = self.chain.relative_fkin(self.qc, self.leftFootLink, 'utorso')
         xhand = xp - self.throw_offset * cos(self.throw_direction)
+        #pShoulder[0] + self.throw_offset * np.cos(self.throw_direction)
+        #
         yhand = yp - self.throw_offset * sin(self.throw_direction)
+        #pShoulder[1] + self.throw_offset * np.sin(self.throw_direction)
+        
         zhand = self.release_height
 
         xvel = (xp - xhand) / self.balltime
@@ -271,6 +279,7 @@ class TrajectoryNode(Node):
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
 
             (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow[mask], self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
+            qcThrow[17:24] = qcThrow[17:24] * np.power((t2-tI)/(tThrow-tI), 2)
             # (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
@@ -280,6 +289,9 @@ class TrajectoryNode(Node):
 
         self.fullBodyConstraint.setJointPositions(qcThrow)
         self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
+
+        self.rightHandConstraint.setDesiredPosition(pdRightHand)
+        self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
         qc, qcdot = self.chain.ikin(self.dt)
         self.qc = qc
@@ -293,7 +305,7 @@ class TrajectoryNode(Node):
 
             self.ball_released = True
             # self.ball_position = self.pRHThrow
-            # self.ball_velocity = self.vRHThrow
+            self.ball_velocity = vdRightHand
 
             self.get_logger().info(f"BALL RELEASED with velocity {self.ball_velocity}")
             self.get_logger().info(f"BALL RELEASED at position {pRH}")
