@@ -65,6 +65,7 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
         self.rightShoulderLink = "pelvis"
         self.worldFrameLink = "l_foot"
+        self.throwExcludeJoints = ["back_bky", "back_bkx"]
 
         # Set up the kinematic chain object.
         q0 = {
@@ -82,7 +83,8 @@ class TrajectoryNode(Node):
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
         self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]), lam=0.1)
-        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)) 
+        self.throwJoints = list(filter(lambda x: x is not None, [i if i not in self.throwExcludeJoints else None for i in self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)]))
+        self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.throwJoints) 
 
         # Balancing
         # self.chain.add_constraint(self.footingConstraint1)
@@ -151,7 +153,7 @@ class TrajectoryNode(Node):
 
         # Set up the timer to update at 100Hz, with (t=0) occuring in
         # the first update cycle (dt) from now.
-        self.dt    = 0.01                       # 100Hz.
+        self.dt    = 1e-2                       # 100Hz.
         self.t     = -self.dt                   # Seconds since start
         self.now   = self.get_clock().now()     # ROS time since 1970
         self.timer = self.create_timer(self.dt, self.update)
@@ -265,7 +267,7 @@ class TrajectoryNode(Node):
         # if floor(self.t // self.dt) % floor(recalculate_ikin_every_sec // self.dt) == 0:
         #     (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
 
-        mask = [self.jointnames.index(joint) for joint in self.fullBodyConstraint.joints ]
+        mask = [self.jointnames.index(joint) for joint in self.throwJoints ]
 
         if t2 < tThrow:
             (pdRightHand, vdRightHand) = spline(t2 - tI, tThrow - tI, self.pRH0, self.pRHThrow, np.zeros(3), np.array(self.vRHThrow))
