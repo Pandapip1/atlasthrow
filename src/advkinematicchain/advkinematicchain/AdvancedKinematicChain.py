@@ -379,7 +379,7 @@ class AdvancedKinematicChain():
         elif(wd is not None):
             ...
         
-        qc = qc % (2 * np.pi) # TODO: Handle prismatic
+        # qc = qc % (2 * np.pi) # TODO: Handle prismatic
 
         (pa, Ra, Jva, Jwa) = self.relative_fkin(qc, initial_link, final_link)
         perror = pa - pd
