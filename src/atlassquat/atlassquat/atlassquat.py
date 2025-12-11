@@ -64,6 +64,7 @@ class TrajectoryNode(Node):
         self.leftHandLink = "l_hand"
         self.rightHandLink = "r_hand"
         self.rightShoulderLink = "pelvis"
+        self.worldFrameLink = "l_foot"
 
         # Set up the kinematic chain object.
         q0 = {
@@ -84,9 +85,9 @@ class TrajectoryNode(Node):
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)) 
 
         # Balancing
-        self.chain.add_constraint(self.footingConstraint1)
+        # self.chain.add_constraint(self.footingConstraint1)
         # self.chain.add_constraint(self.footingConstraint2)
-        self.chain.add_constraint(self.balancingConstraint)
+        # self.chain.add_constraint(self.balancingConstraint)
 
         self.chain.add_constraint(self.fullBodyConstraint)
 
@@ -95,10 +96,10 @@ class TrajectoryNode(Node):
         # Define the matching initial joint/task positions.
         self.q0 = np.array(self.chain.qc)
         
-        (pRH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.rightHandLink)
+        (pRH0, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.rightHandLink)
         self.pRH0 = pRH0
 
-        (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.centerLink, self.leftHandLink)
+        (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.leftHandLink)
         self.pLH0 = pLH0
 
         # Initialize the stored joint command position and task errors.
@@ -156,8 +157,6 @@ class TrajectoryNode(Node):
         self.timer = self.create_timer(self.dt, self.update)
         self.get_logger().info("Running with dt of %f seconds (%fHz)" %
                                (self.dt, 1/self.dt))
-
-        self.chain.get_jointnames(self.leftFootLink, self.rightHandLink)
     
         
     
@@ -183,7 +182,7 @@ class TrajectoryNode(Node):
 
         self.qInitThrow = self.chain.qc # joint configuration at start of throw
         # (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc) # joint configuration at end of throw
-        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.rightShoulderLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
+        (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.worldFrameLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc, movable_joints=self.fullBodyConstraint.joints) # joint configuration at end of throw
 
     # Spawn target at random
     def spawn_new_target(self):
@@ -287,15 +286,18 @@ class TrajectoryNode(Node):
         readyToThrow = t2 >= tThrow
 
         if readyToThrow and not self.ball_released:
-            (_, _, Jv, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.rightHandLink) 
+            (_, _, Jv, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
             self.ball_velocity = Jv @ qcdot
 
             self.ball_released = True
+            # self.ball_position = self.pRHThrow
+            # self.ball_velocity = self.vRHThrow
+
             self.get_logger().info(f"BALL RELEASED with velocity {self.ball_velocity}")
             self.get_logger().info(f"RH at position {pdRightHand}")
 
         if not self.ball_released:
-            (pRH, _, _, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.rightHandLink) 
+            (pRH, _, _, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
             self.ball_position = pRH.copy()
         else:
             self.ball_position += self.ball_velocity * self.dt
@@ -338,7 +340,7 @@ class TrajectoryNode(Node):
             header=header,
             twist=Twist_from_vw(vdRightHand, np.zeros(3))))
 
-        (ppelvis, Rpelvis, _, _) = self.chain.relative_fkin(qc, self.leftFootLink, self.centerLink)
+        (ppelvis, Rpelvis, _, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.centerLink)
 
         header=Header(stamp=self.now.to_msg(), frame_id='world')
         self.tfbroad.sendTransform(TransformStamped(
