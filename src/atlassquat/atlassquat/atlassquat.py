@@ -65,7 +65,7 @@ class TrajectoryNode(Node):
         self.rightHandLink = "r_hand"
         self.rightShoulderLink = "pelvis"
         self.worldFrameLink = "l_foot"
-        self.throwExcludeJoints = []
+        self.throwExcludeJoints = ["back_bky", "back_bkx"]
 
         # Set up the kinematic chain object.
         q0 = {
@@ -76,7 +76,7 @@ class TrajectoryNode(Node):
             "r_leg_kny": 0.6,
             "l_leg_aky": -0.3,
             "r_leg_aky": -0.3,
-            "r_arm_ely": -0.2,
+            # "r_arm_ely": -0.2,
         }
 
         self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.5)
