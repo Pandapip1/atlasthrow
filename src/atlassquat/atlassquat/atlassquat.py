@@ -174,7 +174,7 @@ class TrajectoryNode(Node):
 
         xvel = (xp - xhand) / self.balltime
         yvel = (yp - yhand) / self.balltime
-        zvel = (zp - zhand + 0.5 * self.gravity * self.balltime**2) / self.balltime
+        zvel = (zp - zhand - 0.5 * self.gravity * self.balltime**2) / self.balltime
 
         self.pRHThrow = np.array([xhand, yhand, zhand]) # final position after throw
         self.vRHThrow = np.array([xvel , yvel , zvel]) # final velocity after throw 
