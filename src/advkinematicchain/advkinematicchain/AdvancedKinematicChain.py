@@ -362,7 +362,7 @@ class AdvancedKinematicChain():
         Rclast = Rd
         if Rd is not None:
             while np.linalg.norm(e_R) >= threshold_R:
-                (_, _, Rc, Jw) = chain.relative_fkin(qc, initial_link, final_link)
+                (_, Rc, _, Jw) = chain.relative_fkin(qc, initial_link, final_link)
 
                 Jw[:, inv_mask] = 0
 
@@ -381,7 +381,11 @@ class AdvancedKinematicChain():
         
         # qc = qc % (2 * np.pi) # TODO: Handle prismatic
 
-        return qc[mask], qcdot[mask] # qcdot will be none if vd and wd are None
+        (pa, Ra, Jva, Jwa) = self.relative_fkin(qc, initial_link, final_link)
+        perror = pa - pd
+        verror = Jva @ qcdot - vd
+
+        return qc[mask], qcdot[mask], perror, verror # qcdot will be none if vd and wd are None
 
     def get_jointnames(self, initial_link, final_link):
         names = []
