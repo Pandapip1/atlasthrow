@@ -317,7 +317,7 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=0.005):
+    def relative_ikin(self, initial_link, final_link, final_link_sec=None, pd = None, pd_sec=None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=0.005):
         chain = self
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
@@ -350,6 +350,14 @@ class AdvancedKinematicChain():
                 e_p = ep(pclast, pc)
                 qc = qc + c * np.linalg.pinv(Jv) @ e_p
                 pclast = pc
+
+                if pd_sec is not None:
+                    (pc_sec, _, Jv_sec, _) = chain.relative_fkin(qc, initial_link, final_link_sec)  
+
+                    Jv_sec[:, inv_mask] = 0
+
+                    e_p_sec = ep(pclast, pc_sec) #???
+                    qc = qc + (np.eye(Jv.shape[0]) - np.linalg.pinv(Jv) @ Jv) @ np.linalg.pinv(Jv_sec) @ e_p_sec
 
         Rclast = Rd
         if Rd is not None:
