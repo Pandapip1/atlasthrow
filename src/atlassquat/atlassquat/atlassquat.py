@@ -127,7 +127,8 @@ class TrajectoryNode(Node):
         #Target and ball code
         self.target_radius = 0.26  # 26 cm sphere
         self.ball_radius = 0.12    # 12 cm sphere
-        self.xy_bounds = [0.6, 2]  # x, y limits can change just dummy values
+        self.x_bounds = [0.9, 2]  # x, y limits can change just dummy values
+        self.y_bounds = [-2, 2]
         self.z_bounds = [0.6, 2]  # z limit can change just dummy values
 
         self.spawn_new_target()
@@ -195,8 +196,8 @@ class TrajectoryNode(Node):
     # Spawn target at random
     def spawn_new_target(self):
         self.target_position = np.array([
-            np.random.uniform(*self.xy_bounds),
-            np.random.uniform(*self.xy_bounds),
+            np.random.uniform(*self.x_bounds),
+            np.random.uniform(*self.y_bounds),
             np.random.uniform(*self.z_bounds),
         ])
         self.get_logger().info(f"New target spawned at {self.target_position}")
