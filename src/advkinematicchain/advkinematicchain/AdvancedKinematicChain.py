@@ -402,5 +402,6 @@ class AdvancedKinematicChain():
             qcdot += N @ J_inv @ desired
             N -= J_inv @ J
 
+        self.qcdot = qcdot
         self.qc += dt * qcdot
         return self.qc, self.qcdot
