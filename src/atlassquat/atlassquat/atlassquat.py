@@ -286,7 +286,7 @@ class TrajectoryNode(Node):
         readyToThrow = t2 >= tThrow
 
         if readyToThrow and not self.ball_released:
-            (_, _, Jv, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
+            (pRH, _, Jv, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
             self.ball_velocity = Jv @ qcdot
 
             self.ball_released = True
@@ -294,7 +294,7 @@ class TrajectoryNode(Node):
             # self.ball_velocity = self.vRHThrow
 
             self.get_logger().info(f"BALL RELEASED with velocity {self.ball_velocity}")
-            self.get_logger().info(f"RH at position {pdRightHand}")
+            self.get_logger().info(f"BALL RELEASED at position {pRH}")
 
         if not self.ball_released:
             (pRH, _, _, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
