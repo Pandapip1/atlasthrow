@@ -318,7 +318,7 @@ class AdvancedKinematicChain():
         # Return the info
         return (ptip, Rtip, Jv, Jw)
     
-    def relative_ikin(self, initial_link, final_link, final_link_sec=None, pd = None, pd_sec=None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=3e-3, threshold_p = 1e-4, threshold_R = 1e-4):
+    def relative_ikin(self, initial_link, final_link, pd = None, Rd = None, vd = None, wd = None, q_init=None, movable_joints=None, gamma=3e-3, threshold_p = 1e-4, threshold_R = 1e-4, threshold_grad = 1e-8, lam_grad=0.1):
         chain = self
         if pd is None and Rd is None:
             raise ValueError("One of pd or Rd must be defined")
@@ -351,14 +351,6 @@ class AdvancedKinematicChain():
                 qc = qc + c * np.linalg.pinv(Jv) @ e_pa
                 pclast = pc
 
-                if pd_sec is not None:
-                    (pc_sec, _, Jv_sec, _) = chain.relative_fkin(qc, initial_link, final_link_sec)  
-
-                    Jv_sec[:, inv_mask] = 0
-
-                    e_p_sec = ep(pclast, pc_sec) #???
-                    qc = qc + (np.eye(Jv.shape[0]) - np.linalg.pinv(Jv) @ Jv) @ np.linalg.pinv(Jv_sec) @ e_p_sec
-
         Rclast = Rd
         if Rd is not None:
             while np.linalg.norm(e_R) >= threshold_R:
@@ -373,10 +365,31 @@ class AdvancedKinematicChain():
 
         qcdot = np.zeros(len(self.joint_names))
             
-        if(vd is not None):
-            (_, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link) 
+        qcdot = np.zeros(len(self.joint_names))
+        if vd is not None:
+            (_, _, Jv, _) = chain.relative_fkin(qc, initial_link, final_link)
             Jv[:, inv_mask] = 0
-            qcdot = np.linalg.pinv(Jv) @ vd
+            Jv_pinv = np.linalg.pinv(Jv)
+            q_part = Jv_pinv @ vd
+            n = len(self.joint_names)
+            N = np.eye(n) - Jv_pinv @ Jv
+            max_iters = 2000
+            eps = 1e-8
+            z = np.zeros(n)
+            prev_cost = np.inf
+            for it in range(max_iters):
+                q_candidate = q_part + N @ z
+                cost = np.sum(np.sqrt(q_candidate ** 2 + eps))
+                grad_q = q_candidate / np.sqrt(q_candidate ** 2 + eps)
+                grad_z = N.T @ grad_q
+
+                z = z - lam_grad * grad_z
+
+                if abs(prev_cost - cost) < threshold_grad:
+                    break
+                prev_cost = cost
+
+            qcdot = q_part + N @ z
         elif(wd is not None):
             ...
         
