@@ -233,6 +233,7 @@ class TrajectoryNode(Node):
         self.ball_position = self.pRH0.copy()
         self.ball_velocity = np.zeros(3)
         self.ball_released = False
+        self.timesincerelease = 0.0
     
     # CHECK COLLISION
     def ball_collision(self, ball_point):
@@ -240,12 +241,21 @@ class TrajectoryNode(Node):
         dist = np.linalg.norm(ball_pos - self.target_position)
 
         if dist <= self.target_radius:
-            if not self.target_hit:
+            if not self.target_hit or self.timesincerelease > self.balltime + 1:
                 self.target_hit = True
                 self.get_logger().info("TARGET HIT! Respawning...")
                 self.spawn_new_target()
                 self.spawn_ball()
                 self.compute_throw_end(self.target_position)
+        
+        if not self.target_hit and self.timesincerelease > self.balltime + 1:
+            self.target_hit = True
+            self.get_logger().info("TARGET HIT! Respawning...")
+            self.spawn_new_target()
+            self.spawn_ball()
+            self.compute_throw_end(self.target_position)
+            
+            
 
     # Shutdown
     def shutdown(self):
@@ -314,6 +324,7 @@ class TrajectoryNode(Node):
         else:
             self.ball_position += self.ball_velocity * self.dt
             self.ball_velocity[2] += self.gravity * self.dt
+            self.timesincerelease += self.dt
 
         ##############################################################
         # Finish by publishing the data (joint and task commands).
