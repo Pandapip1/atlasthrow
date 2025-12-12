@@ -111,7 +111,7 @@ class TrajectoryNode(Node):
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.leftFootLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
-        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, 'l_foot', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
@@ -162,7 +162,7 @@ class TrajectoryNode(Node):
         self.target_radius = 0.26  # 26 cm sphere
         self.ball_radius = 0.12    # 12 cm sphere
         self.x_bounds = [3, 5]  # x, y limits can change just dummy values
-        self.y_bounds = [2, 2.5]
+        self.y_bounds = [-2.5, 2.5]
         self.z_bounds = [1, 1.4]  # z limit can change just dummy values
 
         self.spawn_new_target()
@@ -358,8 +358,8 @@ class TrajectoryNode(Node):
         self.elbowConstraint.setJointPositions(np.array([-1.0, 0.0, 0.0, 0.0]))
 
         # Correct reference frame
-        # (poffset, Roffset, _, _) = self.chain.relative_fkin(self.qc, self.worldFrameLink, self.rightHandConstraint.reference_link)
-        # pdRightHand, vdRightHand = poffset + pdRightHand, Roffset @ vdRightHand
+        (poffset, Roffset, _, _) = self.chain.relative_fkin(self.qc, self.worldFrameLink, self.rightHandConstraint.reference_link)
+        # pdRightHand, vdRightHand = poffset + Roffset @ pdRightHand, Roffset @ vdRightHand
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
