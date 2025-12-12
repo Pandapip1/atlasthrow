@@ -100,6 +100,8 @@ class TrajectoryNode(Node):
         self.throwJoints = list(filter(lambda x: x is not None, [i if i not in self.throwExcludeJoints else None for i in self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)]))
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.throwJoints) 
 
+        self.torsoConstraint = JointSetConstraint("torsoConstraint", self.chain, ['back_bkz'])
+
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
         self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
@@ -110,6 +112,8 @@ class TrajectoryNode(Node):
 
         #self.chain.add_constraint(self.fullBodyConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
+
+        self.chain.add_constraint(self.torsoConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -183,12 +187,13 @@ class TrajectoryNode(Node):
     
     # Compute the final thro position and velocity
     def compute_throw_end(self, target_pos):
-        xp, yp, zp = target_pos
+        (pShoulder, _, _, _) = self.chain.relative_fkin(self.qc, self.leftFootLink, 'utorso')
+
+        xp, yp, zp = target_pos - pShoulder
 
         self.throw_direction = atan2(yp, xp)
         self.get_logger().info(f"throw_direction: {self.throw_direction}")
 
-        (pShoulder, _, _, _) = self.chain.relative_fkin(self.qc, self.leftFootLink, 'utorso')
         xhand = pShoulder[0] + self.throw_offset * np.cos(self.throw_direction)
         #
         yhand = pShoulder[1] + self.throw_offset * np.sin(self.throw_direction)
@@ -293,6 +298,8 @@ class TrajectoryNode(Node):
         tThrow = self.periodThrow / 2.
         tReturn = self.periodThrow
 
+        self.throw_direction_rad = self.throw_direction
+
         # recalculate_ikin_every_sec = 1
         # if floor(self.t // self.dt) % floor(recalculate_ikin_every_sec // self.dt) == 0:
         #     (self.qFinThrow, self.qdotFinThrow) = self.chain.relative_ikin(self.leftFootLink, self.rightHandLink, pd=self.pRHThrow, vd=self.vRHThrow, q_init=self.qc)
@@ -305,14 +312,24 @@ class TrajectoryNode(Node):
             (qcThrow, qcdotThrow) = spline(t2 - tI, tThrow, self.qInitThrow[mask], self.qFinThrow, np.zeros(len(self.qdotFinThrow)), self.qdotFinThrow)
             qcThrow[17:24] = qcThrow[17:24] * np.power((t2-tI)/(tThrow-tI), 2)
             # (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
+
+            if t2 < tThrow / 2:
+                (qdBackZ, qddotBackZ) = goto(t2 - tI, tThrow/2, self.q0[2], self.q0[2] - self.throw_direction_rad) 
+            else:
+                (qdBackZ, qddotBackZ) = goto(t2 - tThrow/2, tThrow/2, self.q0[2] - self.throw_direction_rad, self.q0[2] + self.throw_direction_rad) 
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
             (qcThrow, qcdotThrow) = spline(t2 - tThrow, tReturn - tThrow, self.qInitThrow[mask], self.qInitThrow[mask], self.qdotFinThrow, np.zeros(len(self.qdotFinThrow)))
+            
+            (qdBackZ, qddotBackZ) = goto(t2 - tThrow, tReturn - tThrow, self.q0[2] + self.throw_direction_rad, self.q0[2]) 
             # (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
 
         self.fullBodyConstraint.setJointPositions(qcThrow)
         self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
+
+        self.torsoConstraint.setJointPositions(np.array([qdBackZ]))
+        self.torsoConstraint.setJointVelocitys(np.array([qddotBackZ]))
 
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
