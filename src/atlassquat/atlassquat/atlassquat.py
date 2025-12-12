@@ -108,7 +108,7 @@ class TrajectoryNode(Node):
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
         #self.chain.add_constraint(self.footingConstraint2)
-        self.chain.add_constraint(self.balancingConstraint)
+        #self.chain.add_constraint(self.balancingConstraint)
 
         #self.chain.add_constraint(self.fullBodyConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
@@ -138,7 +138,7 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
-        self.balltime = 3 # How long the throw takes
+        self.balltime = 3.1 # How long the throw takes
         self.throw_offset = 0.3 # how far away from target to throw just dummy
         self.release_height = 0.5 # dummy can tune later
 
@@ -254,6 +254,7 @@ class TrajectoryNode(Node):
         self.ball_position = self.pRH0.copy()
         self.ball_velocity = np.zeros(3)
         self.ball_released = False
+        self.readyToThrow = False
         self.timesincerelease = 0.0
     
     # CHECK COLLISION
@@ -338,9 +339,9 @@ class TrajectoryNode(Node):
         self.qc = qc
 
         # Release ball
-        readyToThrow = t2 >= tThrow
+        self.readyToThrow = t2 >= tThrow and t2 < 5.0
 
-        if readyToThrow and not self.ball_released:
+        if self.readyToThrow  and not self.ball_released:
             (pRH, _, Jv, _) = self.chain.relative_fkin(qc, self.worldFrameLink, self.rightHandLink) 
             self.ball_velocity = Jv @ qcdot
 
