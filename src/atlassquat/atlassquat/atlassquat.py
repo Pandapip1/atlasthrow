@@ -79,6 +79,20 @@ class TrajectoryNode(Node):
             # "r_arm_ely": -0.2,
         }
 
+        # (pRightFootDefault, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.rightFootLink)
+        # pRightFootDefault[1] = pRightFootDefault[1] - 1.5
+        # pRightFootDefault[2] = pRightFootDefault[2] + 1.5
+        # (qRightFootOffset, _) = self.chain.relative_ikin(self.centerLink, self.rightFootLink, pd=pRightFootDefault)
+
+        # (pLeftFootDefault, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.leftFootLink)
+        # pLeftFootDefault[1] = pLeftFootDefault[1] + 1.5
+        # pLeftFootDefault[2] = pLeftFootDefault[2] + 1.5
+        # (qLeftFootOffset, _) = self.chain.relative_ikin(self.centerLink, self.leftFootLink, pd=pLeftFootDefault)
+
+        # self.q0[10:16] = qLeftFootOffset[10:16]
+        # self.q0[24:30] = qRightFootOffset[24:30]
+        # self.chain.qc = self.q0
+
         self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.5)
         self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
         self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), lam=0.1)
@@ -86,11 +100,12 @@ class TrajectoryNode(Node):
         self.throwJoints = list(filter(lambda x: x is not None, [i if i not in self.throwExcludeJoints else None for i in self.chain.get_jointnames(self.rightShoulderLink, self.rightHandLink)]))
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.throwJoints) 
 
-        self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
-        # self.chain.add_constraint(self.footingConstraint2)
+        #self.chain.add_constraint(self.footingConstraint2)
         self.chain.add_constraint(self.balancingConstraint)
 
         #self.chain.add_constraint(self.fullBodyConstraint)
