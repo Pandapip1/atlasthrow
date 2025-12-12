@@ -146,7 +146,7 @@ class TrajectoryNode(Node):
         #Target and ball code
         self.target_radius = 0.26  # 26 cm sphere
         self.ball_radius = 0.12    # 12 cm sphere
-        self.x_bounds = [0.9, 2]  # x, y limits can change just dummy values
+        self.x_bounds = [3.5, 5]  # x, y limits can change just dummy values
         self.y_bounds = [-2, 2]
         self.z_bounds = [0.6, 2]  # z limit can change just dummy values
 
@@ -314,9 +314,9 @@ class TrajectoryNode(Node):
             # (qcThrow, qcdotThrow) = spline(self.dt, tThrow - t2, self.chain.qc, self.qFinThrow, self.chain.qcdot, self.qdotFinThrow)
 
             if t2 < tThrow / 2:
-                (qdBackZ, qddotBackZ) = goto(t2 - tI, tThrow/2, self.q0[2], self.q0[2] - self.throw_direction_rad) 
+                (qdBackZ, qddotBackZ) = goto(t2 - tI, tThrow/2, self.q0[2], self.q0[2] - 0.6) 
             else:
-                (qdBackZ, qddotBackZ) = goto(t2 - tThrow/2, tThrow/2, self.q0[2] - self.throw_direction_rad, self.q0[2] + self.throw_direction_rad) 
+                (qdBackZ, qddotBackZ) = goto(t2 - tThrow/2, tThrow/2, self.q0[2] - 0.6, self.q0[2] + self.throw_direction_rad) 
         else:
             (pdRightHand, vdRightHand) = spline(t2 - tThrow, tReturn - tThrow, self.pRHThrow, self.pRH0, np.array(self.vRHThrow), np.zeros(3))
 
