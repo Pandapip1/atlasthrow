@@ -94,17 +94,17 @@ class TrajectoryNode(Node):
             "l_leg_akx": -0.2,
         }
 
-        self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.2)
-        self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]), priority=1)
-        self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), priority=1)
-        self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), priority=1)
+        self.chain = AdvancedKinematicChain(self, q0, {}, gamma=0.1)
+        self.balancingConstraint = COMPlaneConstraint("balancing", self.chain, self.leftFootLink, self.rightFootLink, self.leftFootLink, np.array([0., 0., 1.]), priority=1, lam=0.1)
+        self.footingConstraint1 = LockPlaneConstraint("footLock", self.chain, self.centerLink, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), priority=1, lam=0.1)
+        self.footingConstraint2 = JJRelativeProjectionConstraint("footLock2", self.chain, self.leftFootLink, self.rightFootLink, np.array([0., 0., 1.]), priority=1, lam=0.1)
 
-        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.worldFrameLink, joint_effectiveness=self.throwJointOverrides)
+        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.worldFrameLink, joint_effectiveness=self.throwJointOverrides, lam=0.7)
 
         # Balancing
-        # self.chain.add_constraint(self.balancingConstraint)
-        # self.chain.add_constraint(self.footingConstraint1)
-        # self.chain.add_constraint(self.footingConstraint2)
+        self.chain.add_constraint(self.balancingConstraint)
+        self.chain.add_constraint(self.footingConstraint1)
+        self.chain.add_constraint(self.footingConstraint2)
 
         self.chain.add_constraint(self.rightHandConstraint)
 
@@ -266,7 +266,7 @@ class TrajectoryNode(Node):
                 self.compute_throw_end(self.target_position)
                 self.tI = self.t
         
-        if not self.target_hit and self.ball_position[2] < self.target_position[2] - 1. and self.ball_velocity[2] < 0.:
+        if not self.target_hit and self.tI + self.periodThrow + self.balltime + 1 < self.t:
             self.target_hit = True
             self.get_logger().info("TARGET MISSSED! Respawning...")
             self.spawn_new_target()
@@ -296,9 +296,10 @@ class TrajectoryNode(Node):
 
         if self.t < tThrow:
             (pdRightHand, vdRightHand) = spline(self.dt, tThrow - self.t, self.rightHandConstraint.getDesiredPosition(), self.pRHThrow, self.rightHandConstraint.getDesiredVelocity(), np.array(self.vRHThrow))
-
+        elif self.t < tThrow + self.balltime:
+            (pdRightHand, vdRightHand) = spline(self.dt, tThrow - self.balltime - self.t, self.rightHandConstraint.getDesiredPosition(), self.pRH0, self.rightHandConstraint.getDesiredVelocity(), np.zeros(3))
         else:
-            (pdRightHand, vdRightHand) = spline(self.dt, self.balltime, self.rightHandConstraint.getDesiredPosition(), self.pRH0, self.rightHandConstraint.getDesiredVelocity(), np.zeros(3))
+            (pdRightHand, vdRightHand) = self.pRH0, np.zeros(3)
         
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
