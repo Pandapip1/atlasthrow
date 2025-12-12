@@ -4,14 +4,15 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class LinkPositionConstraint(IKinConstraint):
-    def __init__(self, name, chain, target_link, reference_link, p0, R0, v0, w0, lam = 1.0):
+    def __init__(self, name, chain, target_link, reference_link, lam = 1.0):
         super().__init__(name, chain)
         self.target_link = target_link
         self.reference_link = reference_link
+        p0, R0, Jv, Jw = self.chain.relative_fkin(self.chain.qc, self.reference_link, self.target_link)
         self.pd = p0
         self.Rd = R0
-        self.vd = v0
-        self.wd = w0
+        self.vd = Jv @ self.chain.qcdot
+        self.wd = Jv @ self.chain.qcdot
         self.lam = lam
 
     def getRowTargets(self, dt):

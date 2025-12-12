@@ -108,14 +108,14 @@ class TrajectoryNode(Node):
         self.torsoConstraint = JointSetConstraint("torsoConstraint", self.chain, ['back_bkz'])
         self.elbowConstraint = JointSetConstraint("elbowConstraint", self.chain, ['r_arm_elx', 'r_arm_ely', 'r_arm_shx', 'r_arm_shz']) # -0.8, 0
 
-        self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.leftFootLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightHandConstraint = LinkPositionConstraint("rightHandPosition", self.chain, self.rightHandLink, self.worldFrameLink, lam=0.01)
+        self.rightFootConstraint = LinkPositionConstraint("rightFootPosition", self.chain, self.rightFootLink, self.worldFrameLink)
 
-        self.leftHandConstraint = LinkPoseConstraint("leftHandPosition", self.chain, self.leftHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.leftHandConstraint = LinkPositionConstraint("leftHandPosition", self.chain, self.leftHandLink, self.worldFrameLink)
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
-        #self.chain.add_constraint(self.footingConstraint2)
+        self.chain.add_constraint(self.footingConstraint2)
         self.chain.add_constraint(self.balancingConstraint)
 
         #self.chain.add_constraint(self.fullBodyConstraint)
@@ -123,8 +123,8 @@ class TrajectoryNode(Node):
         #self.chain.add_constraint(self.leftHandConstraint)
         #self.chain.add_constraint(self.rightFootConstraint)
 
-        self.chain.add_constraint(self.torsoConstraint)
-        self.chain.add_constraint(self.elbowConstraint)
+        # self.chain.add_constraint(self.torsoConstraint)
+        # self.chain.add_constraint(self.elbowConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -155,7 +155,7 @@ class TrajectoryNode(Node):
 
         self.balltime = 1.35 # How long the throw takes
         self.throw_offset = 0.5 # how far away from target to throw just dummy
-        self.release_height = 0.3 # dummy can tune later
+        self.release_height = 0 # dummy can tune later
 
 
         #Target and ball code
@@ -212,10 +212,9 @@ class TrajectoryNode(Node):
 
         xhand = pShoulder[0] + self.throw_offset * np.cos(self.throw_direction) - 0.5
         yhand = pShoulder[1] + self.throw_offset * np.sin(self.throw_direction) - 0.5
+        zhand = pShoulder[2] + 1.
 
         print(f"pShoulder: {pShoulder}, xhand: {xhand}, yhand: {yhand}")
-        
-        zhand = pShoulder[2] + 0.3
 
         xvel = (xp - xhand) / self.balltime
         yvel = (yp - yhand) / self.balltime
@@ -347,8 +346,6 @@ class TrajectoryNode(Node):
             (qdBackZ, qddotBackZ) = goto(t2 - tThrow, tReturn - tThrow, self.q0[2] + 3/2 * self.throw_direction_rad, self.q0[2]) 
             # (qcThrow, qcdotThrow) = spline(self.dt, tReturn - t2, self.chain.qc, self.qInitThrow, self.chain.qcdot, np.zeros(len(self.qdotFinThrow)))
         
-        pdRightHand = pdRightHand - ptorso
-
         self.fullBodyConstraint.setJointPositions(qcThrow)
         self.fullBodyConstraint.setJointVelocitys(qcdotThrow)
 
@@ -358,8 +355,6 @@ class TrajectoryNode(Node):
         self.elbowConstraint.setJointPositions(np.array([-1.0, 0.0, 0.0, 0.0]))
 
         # Correct reference frame
-        (poffset, Roffset, _, _) = self.chain.relative_fkin(self.qc, self.worldFrameLink, self.rightHandConstraint.reference_link)
-        # pdRightHand, vdRightHand = poffset + Roffset @ pdRightHand, Roffset @ vdRightHand
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
