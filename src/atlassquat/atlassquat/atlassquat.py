@@ -77,6 +77,11 @@ class TrajectoryNode(Node):
             "l_leg_aky": -0.3,
             "r_leg_aky": -0.3,
             # "r_arm_ely": -0.2,
+
+            "r_leg_hpx": -0.2,
+            "r_leg_akx": 0.2,
+            "l_leg_hpx": 0.2,
+            "l_leg_akx": -0.2,
         }
 
         # (pRightFootDefault, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.rightFootLink)
@@ -101,9 +106,10 @@ class TrajectoryNode(Node):
         self.fullBodyConstraint = JointSetConstraint("fullBodyConstraint", self.chain, self.throwJoints) 
 
         self.torsoConstraint = JointSetConstraint("torsoConstraint", self.chain, ['back_bkz'])
+        self.elbowConstraint = JointSetConstraint("elbowConstraint", self.chain, ['r_arm_elx', 'r_arm_ely']) # -0.8, 0
 
         self.rightHandConstraint = LinkPoseConstraint("rightHandPosition", self.chain, self.rightHandLink, 'utorso', np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
-        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.centerLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
+        self.rightFootConstraint = LinkPoseConstraint("rightFootPosition", self.chain, self.rightFootLink, self.leftFootLink, np.zeros(3), np.eye(3), np.zeros(3), np.zeros(3))
 
         # Balancing
         self.chain.add_constraint(self.footingConstraint1)
@@ -112,8 +118,10 @@ class TrajectoryNode(Node):
 
         #self.chain.add_constraint(self.fullBodyConstraint)
         self.chain.add_constraint(self.rightHandConstraint)
+        #self.chain.add_constraint(self.rightFootConstraint)
 
         self.chain.add_constraint(self.torsoConstraint)
+        self.chain.add_constraint(self.elbowConstraint)
 
         self.jointnames = self.chain.joint_names
 
@@ -125,6 +133,10 @@ class TrajectoryNode(Node):
 
         (pLH0, _, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.leftHandLink)
         self.pLH0 = pLH0
+
+        (pRF0, RRF0, _, _) = self.chain.relative_fkin(self.q0, self.worldFrameLink, self.rightFootLink)
+        self.pRF0 = pRF0
+        self.RRF0 = RRF0
 
         # Initialize the stored joint command position and task errors.
         self.qc = self.q0.copy()
@@ -146,8 +158,8 @@ class TrajectoryNode(Node):
         #Target and ball code
         self.target_radius = 0.26  # 26 cm sphere
         self.ball_radius = 0.12    # 12 cm sphere
-        self.x_bounds = [3.5, 5]  # x, y limits can change just dummy values
-        self.y_bounds = [-2, 2]
+        self.x_bounds = [-2, 2]  # x, y limits can change just dummy values
+        self.y_bounds = [3.5, 5]
         self.z_bounds = [0.6, 2]  # z limit can change just dummy values
 
         self.spawn_new_target()
@@ -189,16 +201,16 @@ class TrajectoryNode(Node):
     def compute_throw_end(self, target_pos):
         (pShoulder, _, _, _) = self.chain.relative_fkin(self.qc, self.leftFootLink, 'utorso')
 
-        xp, yp, zp = target_pos - pShoulder
+        xp, yp, zp = target_pos
 
-        self.throw_direction = atan2(yp, xp)
+        self.throw_direction = atan2(yp - pShoulder[1], xp - pShoulder[0])
         self.get_logger().info(f"throw_direction: {self.throw_direction}")
 
         xhand = pShoulder[0] + self.throw_offset * np.cos(self.throw_direction)
         #
         yhand = pShoulder[1] + self.throw_offset * np.sin(self.throw_direction)
         
-        zhand = self.release_height
+        zhand = pShoulder[2]
 
         xvel = (xp - xhand) / self.balltime
         yvel = (yp - yhand) / self.balltime
@@ -332,9 +344,13 @@ class TrajectoryNode(Node):
         self.torsoConstraint.setJointPositions(np.array([qdBackZ]))
         self.torsoConstraint.setJointVelocitys(np.array([qddotBackZ]))
 
+        self.elbowConstraint.setJointPositions(np.array([-1.0, 0.0]))
+
         self.rightHandConstraint.setDesiredPosition(pdRightHand)
         self.rightHandConstraint.setDesiredVelocity(vdRightHand)
 
+        self.rightFootConstraint.setDesiredPosition(self.pRF0)
+        
         qc, qcdot = self.chain.ikin(self.dt)
         self.qc = qc
 
