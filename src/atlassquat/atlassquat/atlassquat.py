@@ -163,7 +163,7 @@ class TrajectoryNode(Node):
         self.ball_radius = 0.12    # 12 cm sphere
         self.x_bounds = [5, 7]  # x, y limits can change just dummy values
         self.y_bounds = [2, 2.5]
-        self.z_bounds = [1, 1.4]  # z limit can change just dummy values
+        self.z_bounds = [0.5, 3]  # z limit can change just dummy values
 
         self.spawn_new_target()
         self.spawn_ball()
