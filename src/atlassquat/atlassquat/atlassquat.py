@@ -138,7 +138,7 @@ class TrajectoryNode(Node):
         self.period = 6.0 # how long it takes for atlas to do one squat (up->down->up)
         self.periodThrow = 6.0
 
-        self.balltime = 2.5 # How long the throw takes
+        self.balltime = 3 # How long the throw takes
         self.throw_offset = 0.3 # how far away from target to throw just dummy
         self.release_height = 0.5 # dummy can tune later
 
