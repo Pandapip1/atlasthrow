@@ -4,8 +4,8 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class COMPlaneConstraint(IKinConstraint):
-    def __init__(self, name, chain, link1, link2, reference_link, dir_vec, lam=0.5):
-        super().__init__(name, chain)
+    def __init__(self, name, chain, link1, link2, reference_link, dir_vec, lam=0.5, priority=None):
+        super().__init__(name, chain, priority)
         self.link1 = link1
         self.link2 = link2
         self.reference_link = reference_link

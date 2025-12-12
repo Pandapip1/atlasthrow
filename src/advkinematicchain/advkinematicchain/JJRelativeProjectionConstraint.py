@@ -4,8 +4,8 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class JJRelativeProjectionConstraint(IKinConstraint):
-    def __init__(self, name, chain, link_base, link_aux, axis, lam = 1.0):
-        super().__init__(name, chain)
+    def __init__(self, name, chain, link_base, link_aux, axis, lam = 1.0, priority=None):
+        super().__init__(name, chain, priority)
         self.link_base = link_base
         self.link_aux = link_aux
         self.axis = axis / np.linalg.norm(axis)

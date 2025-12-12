@@ -142,9 +142,10 @@ class URDFStep():
         )
 
 class IKinConstraint(ABC):
-    def __init__(self, name, chain):
+    def __init__(self, name, chain, priority):
         self.name = name
         self.chain = chain
+        self.priority = priority
 
     @abstractmethod
     def getRowTargets(self, dt) -> np.array:
@@ -411,12 +412,33 @@ class AdvancedKinematicChain():
         self.constraints.clear()
     
     def ikin(self, dt):
+        priority_groups = {}
+        for c in self.constraints:
+            p = c.priority if c.priority is not None else float('inf')
+            priority_groups.setdefault(p, []).append(c)
+
+        sorted_priorities = sorted(priority_groups.keys())
+
         N = np.eye(len(self.qc))
         qcdot = np.zeros(len(self.qc))
-        for constraint in self.constraints:
-            desired = constraint.getRowTargets(dt)
-            J = constraint.getVelocityCoeffs(dt)
-            J_inv = J.T @ np.linalg.pinv(J @ J.T + np.diag(self.gamma**2 * np.ones(J.shape[0])))
+
+        for p in sorted_priorities:
+            group = priority_groups[p]
+
+            desired_list = []
+            J_list = []
+
+            for c in group:
+                desired_list.append(c.getRowTargets(dt))
+                J_list.append(c.getVelocityCoeffs(dt))
+
+            J = np.vstack(J_list)
+            desired = np.concatenate(desired_list)
+
+            JJt = J @ J.T
+            reg = np.diag(self.gamma**2 * np.ones(J.shape[0]))
+            J_inv = J.T @ np.linalg.pinv(JJt + reg)
+
             qcdot += N @ J_inv @ desired
             N -= J_inv @ J
 

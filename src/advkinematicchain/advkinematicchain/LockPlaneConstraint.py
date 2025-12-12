@@ -4,8 +4,8 @@ import scipy as sp
 from advkinematicchain.AdvancedKinematicChain import IKinConstraint
 
 class LockPlaneConstraint(IKinConstraint):
-    def __init__(self, name, chain, target_link_ref, target_link_1, target_link_2, axis, lam = 1.0):
-        super().__init__(name, chain)
+    def __init__(self, name, chain, target_link_ref, target_link_1, target_link_2, axis, lam = 1.0, priority=None):
+        super().__init__(name, chain, priority)
         self.target_link_ref = target_link_ref
         self.target_link_1 = target_link_1
         self.target_link_2 = target_link_2
